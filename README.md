@@ -11,4 +11,4 @@ Repositório para armazenar simulações, modelos e pesquisas do doutorado em Ci
 
 ## Autor
 
-Prof. Dr. André Ferreira da Fonseca
+Prof. André Fonseca
