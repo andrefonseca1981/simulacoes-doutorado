@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard: Análise de Extremos de Precipitação e Umidade do Solo</title>
+    <style>
+        :root {
+            --primary-color: #005f73;
+            --secondary-color: #0a9396;
+            --accent-color: #94d2bd;
+            --text-color: #333;
+            --bg-color: #f4f4f9;
+            --white: #ffffff;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* Sidebar (Botões) */
+        .sidebar {
+            width: 300px;
+            background-color: var(--primary-color);
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+            overflow-y: auto;
+        }
+
+        .sidebar h2 {
+            color: var(--white);
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+            text-align: center;
+            border-bottom: 1px solid var(--accent-color);
+            padding-bottom: 10px;
+        }
+
+        .nav-btn {
+            background-color: transparent;
+            border: 1px solid var(--accent-color);
+            color: var(--white);
+            padding: 15px;
+            margin-bottom: 10px;
+            text-align: left;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+            font-size: 0.95rem;
+            font-weight: 500;
+        }
+
+        .nav-btn:hover {
+            background-color: var(--secondary-color);
+            transform: translateX(5px);
+        }
+
+        .nav-btn.active {
+            background-color: var(--white);
+            color: var(--primary-color);
+            border-color: var(--white);
+            font-weight: bold;
+        }
+
+        /* Conteúdo Principal */
+        .main-content {
+            flex: 1;
+            padding: 40px;
+            overflow-y: auto;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+        }
+
+        .result-card {
+            background-color: var(--white);
+            width: 100%;
+            max-width: 900px;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            display: none; /* Escondido por padrão */
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        .result-card.active {
+            display: block;
+        }
+
+        h1 {
+            color: var(--primary-color);
+            border-bottom: 2px solid var(--accent-color);
+            padding-bottom: 10px;
+            margin-top: 0;
+        }
+
+        h3 {
+            color: var(--secondary-color);
+            margin-top: 25px;
+        }
+
+        p {
+            line-height: 1.6;
+            margin-bottom: 15px;
+            text-align: justify;
+        }
+
+        .highlight-box {
+            background-color: #e9f5f5;
+            border-left: 5px solid var(--secondary-color);
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 0 5px 5px 0;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Responsividade */
+        @media (max-width: 768px) {
+            body { flex-direction: column; height: auto; overflow: auto; }
+            .sidebar { width: 100%; box-sizing: border-box; }
+            .main-content { padding: 20px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Menu Lateral -->
+    <div class="sidebar">
+        <h2>Objetivos da Tese</h2>
+        <button class="nav-btn active" onclick="showResult('geral')">Obj. Geral: Integração</button>
+        <button class="nav-btn" onclick="showResult('objA')">(a) Modelagem Estatística</button>
+        <button class="nav-btn" onclick="showResult('objB')">(b) Análise de Desastres</button>
+        <button class="nav-btn" onclick="showResult('objC')">(c) Dinâmica de Umidade</button>
+        <button class="nav-btn" onclick="showResult('objD')">(d) Integração SMAP</button>
+        <button class="nav-btn" onclick="showResult('objE')">(e) Análise de Radar</button>
+        <button class="nav-btn" onclick="showResult('objF')">(f) Sistemas de Alerta</button>
+    </div>
+
+    <!-- Área de Resultados -->
+    <div class="main-content">
+
+        <!-- Objetivo Geral -->
+        <div id="geral" class="result-card active">
+            <h1>Objetivo Geral</h1>
+            <h3>Integração Estatística e Hidrológica</h3>
+            <p><strong>Objetivo:</strong> Integrar a caracterização estatística de extremos de precipitação subdiária em Recife com a análise físico-processual da condição hidrológica antecedente do solo em eventos de deslizamento.</p>
+            
+            <div class="highlight-box">
+                <strong>Resultado Principal:</strong>
+                <p>A tese demonstrou que a quantificação probabilística de extremos subdiários é necessária, mas não suficiente isoladamente para explicar deslizamentos. A ocorrência depende criticamente da condição hidrológica antecedente (umidade do solo) e de sua resposta no tempo e na profundidade. A integração de múltiplas escalas (satélite, radar, sensores in situ) forneceu uma interpretação mais robusta dos mecanismos de deflagração.</p>
+            </div>
+        </div>
+
+        <!-- Objetivo A -->
+        <div id="objA" class="result-card">
+            <h1>Objetivo Específico (a)</h1>
+            <h3>Modelagem Estatística de Extremos</h3>
+            <p><strong>Objetivo:</strong> Caracterizar a ocorrência de extremos de precipitação subdiária em Recife via modelagem estatística (GEV), estimando níveis de retorno e discutindo sazonalidade.</p>
+            
+            <h3>Resultados Obtidos:</h3>
+            <ul>
+                <li><strong>Sazonalidade Crítica:</strong> MAM concentra os eventos extremos de <strong>curta duração e maior intensidade</strong>, enquanto JJA apresenta <strong>maiores acumulados associados à precipitação persistente</strong>.</li>
+                <li><strong>Probabilidades:</strong> Eventos superiores a 30 mm/h apresentam <strong>maior probabilidade relativa de ocorrência em MAM</strong>, atingindo valores superiores a 70% na distribuição condicional analisada.</li>
+                <li><strong>Modelo GEV:</strong> A distribuição Generalizada de Valores Extremos apresentou <strong>boa aderência aos dados</strong>, evidenciada pela consistência entre quantis teóricos e empíricos, permitindo estimar níveis de retorno para durações de 1h a 24h.</li>
+                <li><strong>Incerteza:</strong> Períodos de retorno mais longos (ex.: 50 anos) apresentam <strong>maior incerteza nas estimativas</strong>, refletida na ampliação dos intervalos de confiança de 95%. Essa variabilidade é mais evidente em <strong>SON</strong> (período de transição), enquanto MAM e JJA concentram os maiores níveis estimados de precipitação extrema.</li>
+            </ul>
+        </div>
+
+        <!-- Objetivo B -->
+        <div id="objB" class="result-card">
+            <h1>Objetivo Específico (b)</h1>
+            <h3>Análise de Impactos e Desastres</h3>
+            <p><strong>Objetivo:</strong> Sistematizar e analisar registros de impactos e desastres associados à precipitação intensa para contextualizar a vulnerabilidade urbana.</p>
+            
+            <h3>Resultados Obtidos:</h3>
+            <ul>
+                <li><strong>Frequência:</strong> Entre 2016 e 2021, foram registrados 63 eventos. Deslizamentos foram os mais frequentes (29), seguidos por alagamentos (22).</li>
+                <li><strong>Distribuição Espacial:</strong> Concentração em bairros específicos: Iputinga lidera com 8 eventos; Passarinho e Nova Descoberta aparecem co-igualados em segundo lugar, com 5 registros cada.</li>
+                <li><strong>Correlação Temporal:</strong> A maioria dos desastres ocorreu entre março e agosto <strong>(MAM e JJA)</strong>, alinhada diretamente com os períodos de maior probabilidade de extremos identificados na modelagem GEV do Artigo 1.</li>
+                <li><strong>Vulnerabilidade:</strong> A infraestrutura de saneamento precária (apenas 49,5% de atendimento de esgoto) agrava os impactos das chuvas.</li>
+            </ul>
+        </div>
+
+        <!-- Objetivo C -->
+        <div id="objC" class="result-card">
+            <h1>Objetivo Específico (c)</h1>
+            <h3>Dinâmica de Umidade do Solo</h3>
+            <p><strong>Objetivo:</strong> Investigar, por estudo de caso comparativo, como a umidade antecedente e sua variação em profundidade se associam a deslizamentos.</p>
+            
+            <div class="highlight-box">
+                <strong>Identificação de Dois Regimes Hidrológicos:</strong>
+                <ol>
+                    <li><strong>Saturação Crítica Persistente (Evento 07/06/2022):</strong> Solo já saturado antes da chuva, com umidade média de <strong>0,31 m³/m³</strong> — próximo à capacidade de retenção. Variação de umidade mínima (Δθ = 3,0%). A chuva atuou apenas como gatilho final sobre um sistema persistentemente úmido.</li>
+                    <li><strong>Resposta Rápida (Evento 06/02/2023):</strong> Solo inicialmente seco, com umidade média de apenas <strong>0,10 m³/m³</strong>. Variação de umidade extrema (Δθ = 135,8%). A infiltração abrupta reduziu subitamente a sucção matricial, deflagrando o deslizamento mesmo com acumulado de 72h menor do que em 2022.</li>
+                </ol>
+            </div>
+        </div>
+
+        <!-- Objetivo D -->
+        <div id="objD" class="result-card">
+            <h1>Objetivo Específico (d)</h1>
+            <h3>Integração SMAP e Sensores In Situ</h3>
+            <p><strong>Objetivo:</strong> Integrar estimativas de umidade do solo por sensoriamento remoto (SMAP) e observações geotécnicas in situ (Cemaden).</p>
+            
+            <h3>Resultados Obtidos:</h3>
+            <ul>
+                <li><strong>Coerência Física (não validação):</strong> O produto SMAP L4 (escala regional ~9 km) apresentou <strong>coerência física</strong> com os sensores do Cemaden — mas o estudo não trata isso como "validação" metrológica do satélite na escala de encosta. O SMAP foi empregado como indicador do <em>estado de fundo</em> regional, não como medida pontual do talude.</li>
+                <li><strong>Papel do SMAP:</strong> Funcionou como indicador da condição antecedente regional, capturando com clareza a diferença entre o platô estável de alta umidade de 2022 e a subida abrupta em D0 de 2023.</li>
+                <li><strong>Limitação:</strong> A resolução espacial de 9 km é grosseira para a heterogeneidade urbana, mas suficiente para identificar tendências regionais de predisposição hidrológica.</li>
+            </ul>
+        </div>
+
+        <!-- Objetivo E -->
+        <div id="objE" class="result-card">
+            <h1>Objetivo Específico (e)</h1>
+            <h3>Análise de Radar Meteorológico</h3>
+            <p><strong>Objetivo:</strong> Caracterizar a organização e intensidade relativa da precipitação via radar para suportar a interpretação do regime precipitante.</p>
+            
+            <h3>Resultados Obtidos:</h3>
+            <ul>
+                <li><strong>Evento 2022 (Saturação):</strong> Chuva predominantemente <strong>estratiforme e moderada</strong> (refletividade de 36,2 dBZ no horário da ruptura), com acumulado de 72h elevado (~140 mm). A intensidade instantânea foi baixa — o deslizamento foi deflagrado pela persistência, não pela severidade da chuva.</li>
+                <li><strong>Evento 2023 (Resposta Rápida):</strong> <strong>Núcleos convectivos intensos</strong> detectados, com refletividade máxima de 47,7 dBZ (~10 dBZ superior ao evento de 2022), mesmo com acumulado de 72h menor (~75 mm). A intensidade instantânea foi o gatilho predominante.</li>
+                <li><strong>Utilidade do Radar:</strong> Permitiu distinguir a natureza do sistema precipitante (estratiforme vs. convectivo) — distinção inacessível com dados de pluviômetros diários e central para interpretar os dois regimes hidrológicos identificados.</li>
+            </ul>
+        </div>
+
+        <!-- Objetivo F -->
+        <div id="objF" class="result-card">
+            <h1>Objetivo Específico (f)</h1>
+            <h3>Sistemas de Alerta e Monitoramento</h3>
+            <p><strong>Objetivo:</strong> Discutir a utilidade dos achados para sistemas de monitoramento e alerta baseados em chuva e umidade do solo.</p>
+            
+            <div class="highlight-box">
+                <strong>Conclusões para Gestão de Risco:</strong>
+                <p>Os sistemas de alerta ganham robustez ao abandonar limiares pluviométricos "universais" e adotar <strong>limiares dinâmicos</strong> dependentes do estado antecedente do solo.</p>
+                <p>Os dois regimes hidrológicos identificados (Obj. C) — <strong>saturação crítica persistente</strong> e <strong>resposta rápida a eventos convectivos</strong> — implicam estratégias de alerta distintas: no primeiro caso, qualquer chuva adicional sobre solo saturado é suficiente para deflagração; no segundo, o monitoramento da taxa de infiltração e da variação brusca de umidade é o fator crítico.</p>
+                <p>Para Recife, é essencial considerar a interação entre a suscetibilidade geotécnica da Formação Barreiras, a urbanização densa e o regime hidrológico vigente (se o solo já está saturado ou se há risco de resposta rápida a convectivos intensos).</p>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        function showResult(id) {
+            // Remove a classe active de todos os cards de resultado
+            const cards = document.querySelectorAll('.result-card');
+            cards.forEach(card => card.classList.remove('active'));
+
+            // Remove a classe active de todos os botões
+            const buttons = document.querySelectorAll('.nav-btn');
+            buttons.forEach(btn => btn.classList.remove('active'));
+
+            // Adiciona a classe active ao card selecionado
+            document.getElementById(id).classList.add('active');
+
+            // Adiciona a classe active ao botão clicado (encontra o botão pelo onclick)
+            const activeButton = Array.from(buttons).find(btn => btn.getAttribute('onclick').includes(id));
+            if (activeButton) {
+                activeButton.classList.add('active');
+            }
+        }
+    </script>
+</body>
+</html>
+```

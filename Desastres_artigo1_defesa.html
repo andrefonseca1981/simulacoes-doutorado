@@ -1,0 +1,1288 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Completo - Desastres Recife 2016-2021</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+    <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+    <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+            padding: 15px;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: white;
+            padding: 25px 30px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            margin-bottom: 25px;
+        }
+
+        h1 {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-size: 2.5em;
+            margin-bottom: 8px;
+            font-weight: 800;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 1.15em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            text-align: center;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, var(--color-start), var(--color-end));
+        }
+
+        .stat-card:nth-child(1) { --color-start: #667eea; --color-end: #764ba2; }
+        .stat-card:nth-child(2) { --color-start: #f093fb; --color-end: #f5576c; }
+        .stat-card:nth-child(3) { --color-start: #4facfe; --color-end: #00f2fe; }
+        .stat-card:nth-child(4) { --color-start: #43e97b; --color-end: #38f9d7; }
+        .stat-card:nth-child(5) { --color-start: #fa709a; --color-end: #fee140; }
+
+        .stat-card:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+        }
+
+        .stat-number {
+            font-size: 2.8em;
+            font-weight: 800;
+            margin: 8px 0;
+            background: linear-gradient(135deg, var(--color-start), var(--color-end));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 0.95em;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            font-weight: 600;
+        }
+
+        .filters {
+            background: white;
+            padding: 20px 25px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 25px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 700;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        select, button {
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1em;
+            transition: all 0.3s;
+            background: white;
+            cursor: pointer;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 25px;
+            margin-bottom: 25px;
+        }
+
+        .map-container {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            grid-column: 1 / -1;
+        }
+
+        .map-title {
+            font-size: 1.8em;
+            color: #333;
+            margin-bottom: 15px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .map-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .map-btn {
+            padding: 10px 20px;
+            border: 2px solid #667eea;
+            background: white;
+            color: #667eea;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            font-size: 0.9em;
+        }
+
+        .map-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: #667eea;
+        }
+
+        .map-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        #map {
+            height: 600px;
+            border-radius: 12px;
+            border: 3px solid #f0f0f0;
+        }
+
+        .chart-container {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .chart-title {
+            font-size: 1.4em;
+            color: #333;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: 700;
+        }
+
+        .chart-wrapper {
+            position: relative;
+            height: 320px;
+        }
+
+        .full-width {
+            grid-column: 1 / -1;
+        }
+
+        .table-container {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 12px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 0.95em;
+        }
+
+        tbody tr {
+            transition: all 0.2s;
+        }
+
+        tbody tr:hover {
+            background: #f8f9ff;
+            transform: scale(1.01);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .badge-deslizamento { background: linear-gradient(135deg, #ff6b6b, #ee5a6f); color: white; }
+        .badge-alagamento { background: linear-gradient(135deg, #4dabf7, #1890ff); color: white; }
+        .badge-inundacao { background: linear-gradient(135deg, #51cf66, #37b24d); color: white; }
+        .badge-enxurrada { background: linear-gradient(135deg, #ffa94d, #ff922b); color: white; }
+
+        .legend {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-top: 15px;
+        }
+
+        .legend-title {
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: #333;
+            font-size: 0.95em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .legend-items {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9em;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 2px solid white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .info-box {
+            background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+
+        .info-box p {
+            color: #555;
+            line-height: 1.6;
+        }
+
+        @media (max-width: 1024px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 1.8em;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .stat-number {
+                font-size: 2em;
+            }
+
+            #map {
+                height: 400px;
+            }
+
+            .subtitle {
+                font-size: 0.95em;
+            }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .stat-card, .chart-container, .map-container, .table-container {
+            animation: fadeIn 0.6s ease-out;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🗺️ Dashboard Geoespacial de Desastres - Recife</h1>
+            <p class="subtitle">
+                <span>📍 Recife - PE</span>
+                <span>|</span>
+                <span>📅 2016-2021</span>
+                <span>|</span>
+                <span>🔬 Análise Científica com Coordenadas Geográficas</span>
+            </p>
+        </header>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">Total de Ocorrências</div>
+                <div class="stat-number" id="total-ocorrencias">63</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Bairros Afetados</div>
+                <div class="stat-number" id="total-bairros">26</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Tipos de Eventos</div>
+                <div class="stat-number" id="total-tipos">4</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Maior Incidência</div>
+                <div class="stat-number" id="maior-incidencia">8</div>
+                <div class="stat-label" style="font-size: 0.75em; margin-top: 5px;" id="bairro-maior">Iputinga</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Período</div>
+                <div class="stat-number">6</div>
+                <div class="stat-label" style="font-size: 0.75em; margin-top: 5px;">anos</div>
+            </div>
+        </div>
+
+        <div class="filters">
+            <div class="filter-group">
+                <label for="filter-year">🗓️ Ano</label>
+                <select id="filter-year">
+                    <option value="all">Todos os Anos</option>
+                    <option value="2016">2016</option>
+                    <option value="2017">2017</option>
+                    <option value="2018">2018</option>
+                    <option value="2019">2019</option>
+                    <option value="2020">2020</option>
+                    <option value="2021">2021</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="filter-event">⚠️ Tipo de Evento</label>
+                <select id="filter-event">
+                    <option value="all">Todos os Eventos</option>
+                    <option value="Deslizamento">🏔️ Deslizamento</option>
+                    <option value="Alagamento">💧 Alagamento</option>
+                    <option value="Inundação">🌊 Inundação</option>
+                    <option value="Enxurrada">🌀 Enxurrada</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="filter-bairro">📍 Bairro</label>
+                <select id="filter-bairro">
+                    <option value="all">Todos os Bairros</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label style="opacity: 0;">Ação</label>
+                <button onclick="resetFilters()">🔄 Resetar Filtros</button>
+            </div>
+        </div>
+
+        <div class="map-container">
+            <h2 class="map-title">🗺️ Mapa Interativo de Ocorrências</h2>
+            
+            <div class="info-box">
+                <p><strong>💡 Dica:</strong> Clique nos marcadores para ver detalhes. Use os botões abaixo para alternar entre visualizações!</p>
+            </div>
+
+            <div class="map-controls">
+                <button class="map-btn active" id="btn-markers" onclick="setMapMode('markers')">
+                    📍 Marcadores (63 eventos em 51 locais)
+                </button>
+                <button class="map-btn" id="btn-clusters" onclick="setMapMode('clusters')">
+                    🎯 Clusters
+                </button>
+                <button class="map-btn" id="btn-heatmap" onclick="setMapMode('heatmap')">
+                    🔥 Mapa de Calor
+                </button>
+            </div>
+
+            <div id="map"></div>
+
+            <div class="legend">
+                <div class="legend-title">Legenda dos Eventos</div>
+                <div class="legend-items">
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #ff6b6b;"></div>
+                        <span>Deslizamento (29)</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #4dabf7;"></div>
+                        <span>Alagamento (22)</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #51cf66;"></div>
+                        <span>Inundação (8)</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-color" style="background: #ffa94d;"></div>
+                        <span>Enxurrada (4)</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="main-grid">
+            <div class="chart-container">
+                <h2 class="chart-title">📊 Sazonalidade dos Desastres</h2>
+                <div class="chart-wrapper">
+                    <canvas id="seasonalityChart"></canvas>
+                </div>
+                <div class="info-box" style="margin-top: 15px;">
+                    <p><strong>📖 Períodos Sazonais:</strong> DJF (Verão), MAM (Outono), JJA (Inverno), SON (Primavera)</p>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <h2 class="chart-title">📈 Ocorrências por Ano e Estação</h2>
+                <div class="chart-wrapper">
+                    <canvas id="yearSeasonChart"></canvas>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <h2 class="chart-title">📊 Distribuição por Tipo</h2>
+                <div class="chart-wrapper">
+                    <canvas id="eventTypeChart"></canvas>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <h2 class="chart-title">📅 Sazonalidade por Mês</h2>
+                <div class="chart-wrapper">
+                    <canvas id="monthChart"></canvas>
+                </div>
+            </div>
+
+            <div class="chart-container full-width">
+                <h2 class="chart-title">🏘️ Top 10 Bairros Mais Afetados</h2>
+                <div class="chart-wrapper">
+                    <canvas id="neighborhoodChart"></canvas>
+                </div>
+            </div>
+
+            <div class="chart-container full-width">
+                <h2 class="chart-title">📋 Detalhamento Completo das Ocorrências</h2>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>📅 Data</th>
+                                <th>⚠️ Tipo</th>
+                                <th>📍 Bairro</th>
+                                <th>🗓️ Ano</th>
+                                <th>📆 Mês</th>
+                                <th>🌐 Coordenadas</th>
+                                <th>🌤️ Estação</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Dados completos (63 eventos)
+        const allData = [
+            {data: "2016-03-30", mes: 3, ano: 2016, lat: -8.043667, lng: -34.9335128, evento: "Inundação", bairro: "Iputinga"},
+            {data: "2016-04-16", mes: 4, ano: 2016, lat: -8.026450005, lng: -34.96374997, evento: "Deslizamento", bairro: "Cordeiro"},
+            {data: "2016-04-16", mes: 4, ano: 2016, lat: -8.0522404, lng: -34.9286096, evento: "Enxurrada", bairro: "Várzea"},
+            {data: "2016-05-06", mes: 5, ano: 2016, lat: -8.0174846, lng: -34.8976198, evento: "Deslizamento", bairro: "Água Fria"},
+            {data: "2016-05-09", mes: 5, ano: 2016, lat: -8.0642718, lng: -34.8861222, evento: "Alagamento", bairro: "Boa Vista"},
+            {data: "2016-05-30", mes: 5, ano: 2016, lat: -8.05936002, lng: -34.91934001, evento: "Deslizamento", bairro: "Passarinho"},
+            {data: "2016-06-03", mes: 6, ano: 2016, lat: -8.02836, lng: -34.92861, evento: "Deslizamento", bairro: "Linha do Tiro"},
+            {data: "2016-06-10", mes: 6, ano: 2016, lat: -8.06853998, lng: -34.88119002, evento: "Inundação", bairro: "Iputinga"},
+            {data: "2016-07-22", mes: 7, ano: 2016, lat: -8.07066002, lng: -34.91067002, evento: "Enxurrada", bairro: "Afogados"},
+            {data: "2017-05-08", mes: 5, ano: 2017, lat: -8.04795001, lng: -34.87696, evento: "Deslizamento", bairro: "Nova Descoberta"},
+            {data: "2017-05-30", mes: 5, ano: 2017, lat: -8.0595, lng: -34.88612, evento: "Deslizamento", bairro: "Passarinho"},
+            {data: "2017-07-04", mes: 7, ano: 2017, lat: -8.06094, lng: -34.90615999, evento: "Deslizamento", bairro: "Dois Unidos"},
+            {data: "2017-07-05", mes: 7, ano: 2017, lat: -8.06094, lng: -34.90615999, evento: "Deslizamento", bairro: "Dois Unidos"},
+            {data: "2018-04-09", mes: 4, ano: 2018, lat: -8.05286002, lng: -34.90616998, evento: "Alagamento", bairro: "Iputinga"},
+            {data: "2018-04-09", mes: 4, ano: 2018, lat: -8.05286002, lng: -34.90616998, evento: "Alagamento", bairro: "Iputinga"},
+            {data: "2018-04-10", mes: 4, ano: 2018, lat: -8.04795001, lng: -34.87696, evento: "Deslizamento", bairro: "Nova Descoberta"},
+            {data: "2018-04-10", mes: 4, ano: 2018, lat: -8.0312, lng: -34.89762, evento: "Deslizamento", bairro: "Passarinho"},
+            {data: "2018-05-29", mes: 5, ano: 2018, lat: -8.02836, lng: -34.92861, evento: "Deslizamento", bairro: "Linha do Tiro"},
+            {data: "2018-06-02", mes: 6, ano: 2018, lat: -8.12165, lng: -34.90826998, evento: "Inundação", bairro: "Coqueiral"},
+            {data: "2018-06-11", mes: 6, ano: 2018, lat: -8.12165, lng: -34.90826998, evento: "Alagamento", bairro: "Coqueiral"},
+            {data: "2018-06-11", mes: 6, ano: 2018, lat: -8.11624001, lng: -34.90487, evento: "Alagamento", bairro: "Ibura"},
+            {data: "2018-07-08", mes: 7, ano: 2018, lat: -8.05286002, lng: -34.90616998, evento: "Alagamento", bairro: "Iputinga"},
+            {data: "2018-07-08", mes: 7, ano: 2018, lat: -8.06094, lng: -34.90615999, evento: "Alagamento", bairro: "Dois Unidos"},
+            {data: "2019-01-01", mes: 1, ano: 2019, lat: -8.05936002, lng: -34.91934001, evento: "Alagamento", bairro: "Passarinho"},
+            {data: "2019-02-02", mes: 2, ano: 2019, lat: -8.04795001, lng: -34.87696, evento: "Alagamento", bairro: "Nova Descoberta"},
+            {data: "2019-02-02", mes: 2, ano: 2019, lat: -8.026450005, lng: -34.96374997, evento: "Alagamento", bairro: "Cordeiro"},
+            {data: "2019-02-14", mes: 2, ano: 2019, lat: -8.02836, lng: -34.92861, evento: "Alagamento", bairro: "Linha do Tiro"},
+            {data: "2019-03-29", mes: 3, ano: 2019, lat: -8.05286002, lng: -34.90616998, evento: "Alagamento", bairro: "Iputinga"},
+            {data: "2019-04-09", mes: 4, ano: 2019, lat: -8.06853998, lng: -34.88119002, evento: "Alagamento", bairro: "Santo Amaro"},
+            {data: "2019-04-22", mes: 4, ano: 2019, lat: -8.07066002, lng: -34.91067002, evento: "Alagamento", bairro: "Afogados"},
+            {data: "2019-04-23", mes: 4, ano: 2019, lat: -8.11624001, lng: -34.90487, evento: "Alagamento", bairro: "Ibura"},
+            {data: "2019-05-16", mes: 5, ano: 2019, lat: -8.05286002, lng: -34.90616998, evento: "Alagamento", bairro: "Iputinga"},
+            {data: "2019-06-15", mes: 6, ano: 2019, lat: -8.06094, lng: -34.90615999, evento: "Alagamento", bairro: "Dois Unidos"},
+            {data: "2019-06-17", mes: 6, ano: 2019, lat: -8.04795001, lng: -34.87696, evento: "Deslizamento", bairro: "Nova Descoberta"},
+            {data: "2019-07-01", mes: 7, ano: 2019, lat: -8.026450005, lng: -34.96374997, evento: "Deslizamento", bairro: "Cordeiro"},
+            {data: "2019-08-20", mes: 8, ano: 2019, lat: -8.07066002, lng: -34.91067002, evento: "Alagamento", bairro: "Afogados"},
+            {data: "2020-01-11", mes: 1, ano: 2020, lat: -8.12165, lng: -34.90826998, evento: "Alagamento", bairro: "Coqueiral"},
+            {data: "2020-01-30", mes: 1, ano: 2020, lat: -8.06853998, lng: -34.88119002, evento: "Deslizamento", bairro: "Santo Amaro"},
+            {data: "2020-02-02", mes: 2, ano: 2020, lat: -8.11624001, lng: -34.90487, evento: "Alagamento", bairro: "Ibura"},
+            {data: "2020-02-27", mes: 2, ano: 2020, lat: -8.04795001, lng: -34.87696, evento: "Deslizamento", bairro: "Nova Descoberta"},
+            {data: "2020-06-29", mes: 6, ano: 2020, lat: -8.026450005, lng: -34.96374997, evento: "Deslizamento", bairro: "Cordeiro"},
+            {data: "2020-07-01", mes: 7, ano: 2020, lat: -8.06853998, lng: -34.88119002, evento: "Deslizamento", bairro: "Santo Amaro"},
+            {data: "2021-02-12", mes: 2, ano: 2021, lat: -8.05286002, lng: -34.90616998, evento: "Inundação", bairro: "Iputinga"},
+            {data: "2021-03-19", mes: 3, ano: 2021, lat: -8.05286002, lng: -34.90616998, evento: "Inundação", bairro: "Iputinga"},
+            {data: "2021-04-01", mes: 4, ano: 2021, lat: -8.02836, lng: -34.92861, evento: "Deslizamento", bairro: "Linha do Tiro"},
+            {data: "2021-04-10", mes: 4, ano: 2021, lat: -8.05936002, lng: -34.91934001, evento: "Deslizamento", bairro: "Passarinho"},
+            {data: "2021-04-10", mes: 4, ano: 2021, lat: -8.0595, lng: -34.88612, evento: "Deslizamento", bairro: "Passarinho"},
+            {data: "2021-04-12", mes: 4, ano: 2021, lat: -8.06094, lng: -34.90615999, evento: "Deslizamento", bairro: "Dois Unidos"},
+            {data: "2021-04-17", mes: 4, ano: 2021, lat: -8.04795001, lng: -34.87696, evento: "Deslizamento", bairro: "Nova Descoberta"},
+            {data: "2021-04-21", mes: 4, ano: 2021, lat: -8.026450005, lng: -34.96374997, evento: "Deslizamento", bairro: "Cordeiro"},
+            {data: "2021-04-23", mes: 4, ano: 2021, lat: -8.05286002, lng: -34.90616998, evento: "Alagamento", bairro: "Iputinga"},
+            {data: "2021-04-26", mes: 4, ano: 2021, lat: -8.07066002, lng: -34.91067002, evento: "Enxurrada", bairro: "Afogados"},
+            {data: "2021-04-28", mes: 4, ano: 2021, lat: -8.11624001, lng: -34.90487, evento: "Deslizamento", bairro: "Ibura"},
+            {data: "2021-04-29", mes: 4, ano: 2021, lat: -8.12165, lng: -34.90826998, evento: "Deslizamento", bairro: "Coqueiral"},
+            {data: "2021-05-01", mes: 5, ano: 2021, lat: -8.06853998, lng: -34.88119002, evento: "Deslizamento", bairro: "Santo Amaro"},
+            {data: "2021-05-02", mes: 5, ano: 2021, lat: -8.0174846, lng: -34.8976198, evento: "Deslizamento", bairro: "Água Fria"},
+            {data: "2021-05-04", mes: 5, ano: 2021, lat: -8.0642718, lng: -34.8861222, evento: "Alagamento", bairro: "Boa Vista"},
+            {data: "2021-05-08", mes: 5, ano: 2021, lat: -8.0522404, lng: -34.9286096, evento: "Deslizamento", bairro: "Várzea"},
+            {data: "2021-05-15", mes: 5, ano: 2021, lat: -8.07066002, lng: -34.91067002, evento: "Inundação", bairro: "Afogados"},
+            {data: "2021-05-20", mes: 5, ano: 2021, lat: -8.05936002, lng: -34.91934001, evento: "Inundação", bairro: "Passarinho"},
+            {data: "2021-05-24", mes: 5, ano: 2021, lat: -8.05286002, lng: -34.90616998, evento: "Inundação", bairro: "Iputinga"},
+            {data: "2021-05-28", mes: 5, ano: 2021, lat: -8.04795001, lng: -34.87696, evento: "Deslizamento", bairro: "Nova Descoberta"},
+            {data: "2021-06-05", mes: 6, ano: 2021, lat: -8.02836, lng: -34.92861, evento: "Enxurrada", bairro: "Linha do Tiro"}
+        ];
+
+        // Adicionar estação a cada evento
+        function getSeason(month) {
+            if (month === 12 || month === 1 || month === 2) return 'DJF';
+            if (month >= 3 && month <= 5) return 'MAM';
+            if (month >= 6 && month <= 8) return 'JJA';
+            return 'SON';
+        }
+
+        allData.forEach(item => {
+            item.estacao = getSeason(item.mes);
+        });
+
+        // Variáveis globais
+        let filteredData = [...allData];
+        let charts = {};
+        let map, markersLayer, clustersLayer, heatmapLayer;
+        let currentMapMode = 'markers';
+
+        // Cores dos eventos
+        const eventColors = {
+            'Deslizamento': '#ff6b6b',
+            'Alagamento': '#4dabf7',
+            'Inundação': '#51cf66',
+            'Enxurrada': '#ffa94d'
+        };
+
+        // Ícones dos eventos
+        const eventIcons = {
+            'Deslizamento': '🏔️',
+            'Alagamento': '💧',
+            'Inundação': '🌊',
+            'Enxurrada': '🌀'
+        };
+
+        // Cores das estações
+        const seasonColors = {
+            'DJF': '#4dabf7',  // Azul (Verão)
+            'MAM': '#ff6b6b',  // Vermelho (Outono - mais eventos)
+            'JJA': '#ffa94d',  // Laranja (Inverno)
+            'SON': '#51cf66'   // Verde (Primavera)
+        };
+
+        // Inicializar mapa
+        function initMap() {
+            map = L.map('map').setView([-8.05, -34.91], 12);
+            
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors',
+                maxZoom: 18
+            }).addTo(map);
+
+            // Agrupar eventos por coordenadas
+            const eventsByLocation = {};
+            allData.forEach(item => {
+                const key = `${item.lat},${item.lng}`;
+                if (!eventsByLocation[key]) {
+                    eventsByLocation[key] = {
+                        lat: item.lat,
+                        lng: item.lng,
+                        eventos: []
+                    };
+                }
+                eventsByLocation[key].eventos.push(item);
+            });
+
+            markersLayer = L.layerGroup().addTo(map);
+            clustersLayer = L.markerClusterGroup({
+                maxClusterRadius: 50,
+                spiderfyOnMaxZoom: true,
+                showCoverageOnHover: false
+            });
+            
+            updateMap();
+        }
+
+        // Atualizar mapa
+        function updateMap() {
+            markersLayer.clearLayers();
+            clustersLayer.clearLayers();
+            if (heatmapLayer) {
+                map.removeLayer(heatmapLayer);
+            }
+
+            // Agrupar eventos por localização
+            const eventsByLocation = {};
+            filteredData.forEach(item => {
+                const key = `${item.lat},${item.lng}`;
+                if (!eventsByLocation[key]) {
+                    eventsByLocation[key] = {
+                        lat: item.lat,
+                        lng: item.lng,
+                        eventos: []
+                    };
+                }
+                eventsByLocation[key].eventos.push(item);
+            });
+
+            if (currentMapMode === 'markers') {
+                // Modo marcadores
+                Object.values(eventsByLocation).forEach(location => {
+                    const eventos = location.eventos;
+                    const totalEventos = eventos.length;
+                    
+                    // Cor baseada no tipo de evento mais frequente
+                    const eventCounts = {};
+                    eventos.forEach(e => {
+                        eventCounts[e.evento] = (eventCounts[e.evento] || 0) + 1;
+                    });
+                    const mainEvent = Object.keys(eventCounts).reduce((a, b) => 
+                        eventCounts[a] > eventCounts[b] ? a : b
+                    );
+                    const color = eventColors[mainEvent];
+                    
+                    const marker = L.circleMarker([location.lat, location.lng], {
+                        radius: totalEventos > 1 ? 12 : 8,
+                        fillColor: color,
+                        color: '#fff',
+                        weight: 3,
+                        opacity: 1,
+                        fillOpacity: 0.9
+                    });
+                    
+                    // Criar popup com todos os eventos
+                    let popupContent = `<div class="popup-content">`;
+                    if (totalEventos > 1) {
+                        popupContent += `<h3>📍 ${totalEventos} Eventos Neste Local</h3>`;
+                    }
+                    
+                    eventos.forEach((ev, idx) => {
+                        if (idx > 0) popupContent += '<hr style="margin: 10px 0; border: none; border-top: 1px solid #eee;">';
+                        popupContent += `
+                            <p><strong>${eventIcons[ev.evento]} ${ev.evento}</strong></p>
+                            <p><strong>📍 Bairro:</strong> ${ev.bairro}</p>
+                            <p><strong>📅 Data:</strong> ${formatDate(ev.data)}</p>
+                            <p><strong>🌤️ Estação:</strong> ${ev.estacao}</p>
+                        `;
+                    });
+                    
+                    popupContent += `<p style="margin-top: 10px;"><strong>🌐 Coordenadas:</strong><br>${location.lat.toFixed(6)}, ${location.lng.toFixed(6)}</p></div>`;
+                    
+                    marker.bindPopup(popupContent);
+                    markersLayer.addLayer(marker);
+                });
+                
+                if (!map.hasLayer(markersLayer)) map.addLayer(markersLayer);
+                if (map.hasLayer(clustersLayer)) map.removeLayer(clustersLayer);
+                
+            } else if (currentMapMode === 'clusters') {
+                // Modo clusters
+                Object.values(eventsByLocation).forEach(location => {
+                    const eventos = location.eventos;
+                    const totalEventos = eventos.length;
+                    
+                    const eventCounts = {};
+                    eventos.forEach(e => {
+                        eventCounts[e.evento] = (eventCounts[e.evento] || 0) + 1;
+                    });
+                    const mainEvent = Object.keys(eventCounts).reduce((a, b) => 
+                        eventCounts[a] > eventCounts[b] ? a : b
+                    );
+                    const color = eventColors[mainEvent];
+                    
+                    const marker = L.circleMarker([location.lat, location.lng], {
+                        radius: 8,
+                        fillColor: color,
+                        color: '#fff',
+                        weight: 2,
+                        opacity: 1,
+                        fillOpacity: 0.9
+                    });
+                    
+                    let popupContent = `<div class="popup-content">`;
+                    if (totalEventos > 1) {
+                        popupContent += `<h3>📍 ${totalEventos} Eventos</h3>`;
+                    }
+                    eventos.forEach((ev, idx) => {
+                        if (idx > 0) popupContent += '<hr style="margin: 8px 0; border: none; border-top: 1px solid #eee;">';
+                        popupContent += `
+                            <p><strong>${eventIcons[ev.evento]} ${ev.evento}</strong></p>
+                            <p>${ev.bairro} - ${formatDate(ev.data)}</p>
+                        `;
+                    });
+                    popupContent += '</div>';
+                    
+                    marker.bindPopup(popupContent);
+                    clustersLayer.addLayer(marker);
+                });
+                
+                if (!map.hasLayer(clustersLayer)) map.addLayer(clustersLayer);
+                if (map.hasLayer(markersLayer)) map.removeLayer(markersLayer);
+                
+            } else if (currentMapMode === 'heatmap') {
+                // Modo heatmap
+                const heatData = filteredData.map(item => [item.lat, item.lng, 1]);
+                
+                heatmapLayer = L.heatLayer(heatData, {
+                    radius: 25,
+                    blur: 35,
+                    maxZoom: 17,
+                    gradient: {
+                        0.0: '#0066ff',
+                        0.5: '#ffff00',
+                        1.0: '#ff0000'
+                    }
+                }).addTo(map);
+                
+                if (map.hasLayer(markersLayer)) map.removeLayer(markersLayer);
+                if (map.hasLayer(clustersLayer)) map.removeLayer(clustersLayer);
+            }
+        }
+
+        // Trocar modo do mapa
+        function setMapMode(mode) {
+            currentMapMode = mode;
+            
+            document.querySelectorAll('.map-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`btn-${mode}`).classList.add('active');
+            
+            updateMap();
+        }
+
+        // Criar gráfico de sazonalidade
+        function createSeasonalityChart(data) {
+            const ctx = document.getElementById('seasonalityChart');
+            const seasonCounts = {'DJF': 0, 'MAM': 0, 'JJA': 0, 'SON': 0};
+            
+            data.forEach(item => {
+                seasonCounts[item.estacao]++;
+            });
+            
+            if (charts.seasonality) charts.seasonality.destroy();
+            
+            charts.seasonality = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['DJF (Verão)', 'MAM (Outono)', 'JJA (Inverno)', 'SON (Primavera)'],
+                    datasets: [{
+                        label: 'Número de Desastres',
+                        data: [seasonCounts.DJF, seasonCounts.MAM, seasonCounts.JJA, seasonCounts.SON],
+                        backgroundColor: [
+                            seasonColors.DJF,
+                            seasonColors.MAM,
+                            seasonColors.JJA,
+                            seasonColors.SON
+                        ],
+                        borderWidth: 2,
+                        borderColor: '#fff',
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            padding: 12,
+                            titleFont: { size: 14, weight: 'bold' },
+                            bodyFont: { size: 13 },
+                            callbacks: {
+                                afterLabel: function(context) {
+                                    const total = Object.values(seasonCounts).reduce((a, b) => a + b, 0);
+                                    const percentage = ((context.parsed.y / total) * 100).toFixed(1);
+                                    return `${percentage}% do total`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { 
+                                stepSize: 5,
+                                font: { size: 12, weight: 'bold' }
+                            },
+                            grid: { color: 'rgba(0, 0, 0, 0.05)' }
+                        },
+                        x: {
+                            ticks: { font: { size: 11, weight: 'bold' } },
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Criar gráfico de ano por estação
+        function createYearSeasonChart(data) {
+            const ctx = document.getElementById('yearSeasonChart');
+            
+            // Processar dados
+            const yearSeasonData = {};
+            data.forEach(item => {
+                const key = `${item.ano}-${item.estacao}`;
+                yearSeasonData[key] = (yearSeasonData[key] || 0) + 1;
+            });
+            
+            const anos = [...new Set(data.map(d => d.ano))].sort();
+            const estacoes = ['DJF', 'MAM', 'JJA', 'SON'];
+            
+            const datasets = estacoes.map(estacao => {
+                return {
+                    label: estacao,
+                    data: anos.map(ano => yearSeasonData[`${ano}-${estacao}`] || 0),
+                    backgroundColor: seasonColors[estacao],
+                    borderWidth: 2,
+                    borderColor: '#fff',
+                    borderRadius: 6
+                };
+            });
+            
+            if (charts.yearSeason) charts.yearSeason.destroy();
+            
+            charts.yearSeason = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: anos,
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 15,
+                                font: { size: 12, weight: 'bold' }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            stacked: true,
+                            ticks: { font: { size: 11, weight: 'bold' } },
+                            grid: { display: false }
+                        },
+                        y: {
+                            stacked: true,
+                            beginAtZero: true,
+                            ticks: { 
+                                stepSize: 2,
+                                font: { size: 12, weight: 'bold' }
+                            },
+                            grid: { color: 'rgba(0, 0, 0, 0.05)' }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Contar ocorrências
+        function countOccurrences(data, field) {
+            return data.reduce((acc, item) => {
+                acc[item[field]] = (acc[item[field]] || 0) + 1;
+                return acc;
+            }, {});
+        }
+
+        // Criar outros gráficos
+        function createEventTypeChart(data) {
+            const ctx = document.getElementById('eventTypeChart');
+            const counts = countOccurrences(data, 'evento');
+            
+            if (charts.eventType) charts.eventType.destroy();
+            
+            charts.eventType = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(counts),
+                    datasets: [{
+                        data: Object.values(counts),
+                        backgroundColor: Object.keys(counts).map(e => eventColors[e]),
+                        borderWidth: 3,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 20,
+                                font: { size: 13, weight: 'bold' },
+                                generateLabels: function(chart) {
+                                    const data = chart.data;
+                                    return data.labels.map((label, i) => ({
+                                        text: `${eventIcons[label]} ${label}: ${data.datasets[0].data[i]}`,
+                                        fillStyle: data.datasets[0].backgroundColor[i],
+                                        hidden: false,
+                                        index: i
+                                    }));
+                                }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = ((context.parsed / total) * 100).toFixed(1);
+                                    return `${context.label}: ${context.parsed} (${percentage}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function createMonthChart(data) {
+            const ctx = document.getElementById('monthChart');
+            const counts = countOccurrences(data, 'mes');
+            const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+            
+            if (charts.month) charts.month.destroy();
+            
+            charts.month = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: monthNames,
+                    datasets: [{
+                        label: 'Ocorrências',
+                        data: Array.from({length: 12}, (_, i) => counts[i + 1] || 0),
+                        backgroundColor: 'rgba(79, 172, 254, 0.2)',
+                        borderColor: 'rgba(79, 172, 254, 1)',
+                        borderWidth: 4,
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 6,
+                        pointHoverRadius: 8,
+                        pointBackgroundColor: '#fff',
+                        pointBorderWidth: 3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { 
+                                stepSize: 2,
+                                font: { size: 12, weight: 'bold' }
+                            },
+                            grid: { color: 'rgba(0, 0, 0, 0.05)' }
+                        },
+                        x: {
+                            ticks: { font: { size: 11, weight: 'bold' } },
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
+        }
+
+        function createNeighborhoodChart(data) {
+            const ctx = document.getElementById('neighborhoodChart');
+            const counts = countOccurrences(data, 'bairro');
+            const sorted = Object.entries(counts)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 10);
+            
+            if (charts.neighborhood) charts.neighborhood.destroy();
+            
+            charts.neighborhood = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: sorted.map(s => s[0]),
+                    datasets: [{
+                        label: 'Ocorrências',
+                        data: sorted.map(s => s[1]),
+                        backgroundColor: 'rgba(240, 147, 251, 0.8)',
+                        borderColor: 'rgba(240, 147, 251, 1)',
+                        borderWidth: 2,
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            ticks: { 
+                                stepSize: 1,
+                                font: { size: 12, weight: 'bold' }
+                            },
+                            grid: { color: 'rgba(0, 0, 0, 0.05)' }
+                        },
+                        y: {
+                            ticks: { font: { size: 11, weight: 'bold' } },
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Criar tabela
+        function createTable(data) {
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = '';
+            
+            const eventBadges = {
+                'Deslizamento': 'badge-deslizamento',
+                'Alagamento': 'badge-alagamento',
+                'Inundação': 'badge-inundacao',
+                'Enxurrada': 'badge-enxurrada'
+            };
+            
+            const sortedData = [...data].sort((a, b) => new Date(b.data) - new Date(a.data));
+            
+            sortedData.forEach(item => {
+                const row = tbody.insertRow();
+                row.innerHTML = `
+                    <td>${formatDate(item.data)}</td>
+                    <td><span class="badge ${eventBadges[item.evento]}">${eventIcons[item.evento]} ${item.evento}</span></td>
+                    <td><strong>${item.bairro}</strong></td>
+                    <td>${item.ano}</td>
+                    <td>${getMonthName(item.mes)}</td>
+                    <td style="font-family: monospace; font-size: 0.85em;">${item.lat.toFixed(4)}, ${item.lng.toFixed(4)}</td>
+                    <td><strong>${item.estacao}</strong></td>
+                `;
+            });
+        }
+
+        // Funções auxiliares
+        function formatDate(dateStr) {
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('pt-BR');
+        }
+
+        function getMonthName(month) {
+            const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+            return months[month - 1];
+        }
+
+        // Atualizar estatísticas
+        function updateStats(data) {
+            document.getElementById('total-ocorrencias').textContent = data.length;
+            
+            const uniqueBairros = [...new Set(data.map(d => d.bairro))];
+            document.getElementById('total-bairros').textContent = uniqueBairros.length;
+            
+            const uniqueTipos = [...new Set(data.map(d => d.evento))];
+            document.getElementById('total-tipos').textContent = uniqueTipos.length;
+            
+            const bairroCounts = {};
+            data.forEach(d => {
+                bairroCounts[d.bairro] = (bairroCounts[d.bairro] || 0) + 1;
+            });
+            const maxBairro = Object.entries(bairroCounts).sort((a, b) => b[1] - a[1])[0];
+            if (maxBairro) {
+                document.getElementById('maior-incidencia').textContent = maxBairro[1];
+                document.getElementById('bairro-maior').textContent = maxBairro[0];
+            }
+        }
+
+        // Atualizar dashboard
+        function updateDashboard() {
+            updateStats(filteredData);
+            createSeasonalityChart(filteredData);
+            createYearSeasonChart(filteredData);
+            createEventTypeChart(filteredData);
+            createMonthChart(filteredData);
+            createNeighborhoodChart(filteredData);
+            updateMap();
+            createTable(filteredData);
+        }
+
+        // Aplicar filtros
+        function applyFilters() {
+            const yearFilter = document.getElementById('filter-year').value;
+            const eventFilter = document.getElementById('filter-event').value;
+            const bairroFilter = document.getElementById('filter-bairro').value;
+            
+            filteredData = allData.filter(item => {
+                const yearMatch = yearFilter === 'all' || item.ano.toString() === yearFilter;
+                const eventMatch = eventFilter === 'all' || item.evento === eventFilter;
+                const bairroMatch = bairroFilter === 'all' || item.bairro === bairroFilter;
+                return yearMatch && eventMatch && bairroMatch;
+            });
+            
+            updateDashboard();
+        }
+
+        // Resetar filtros
+        function resetFilters() {
+            document.getElementById('filter-year').value = 'all';
+            document.getElementById('filter-event').value = 'all';
+            document.getElementById('filter-bairro').value = 'all';
+            applyFilters();
+        }
+
+        // Preencher dropdown de bairros
+        function populateBairrosDropdown() {
+            const bairros = [...new Set(allData.map(d => d.bairro))].sort();
+            const select = document.getElementById('filter-bairro');
+            
+            bairros.forEach(bairro => {
+                const option = document.createElement('option');
+                option.value = bairro;
+                option.textContent = bairro;
+                select.appendChild(option);
+            });
+        }
+
+        // Event listeners
+        document.getElementById('filter-year').addEventListener('change', applyFilters);
+        document.getElementById('filter-event').addEventListener('change', applyFilters);
+        document.getElementById('filter-bairro').addEventListener('change', applyFilters);
+
+        // Inicialização
+        document.addEventListener('DOMContentLoaded', function() {
+            populateBairrosDropdown();
+            initMap();
+            updateDashboard();
+        });
+    </script>
+</body>
+</html>

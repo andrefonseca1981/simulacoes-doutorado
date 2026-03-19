@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Climático IDF - Análise de Precipitação Extrema</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-blue: #1e3a8a;
+            --ocean-blue: #0ea5e9;
+            --rain-blue: #38bdf8;
+            --storm-purple: #7c3aed;
+            --warning-orange: #f59e0b;
+            --danger-red: #dc2626;
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --border-color: #334155;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, var(--bg-dark) 0%, #1e1b4b 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 3rem;
+            position: relative;
+        }
+
+        header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(56, 189, 248, 0.1) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--rain-blue), var(--storm-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.02em;
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            font-weight: 300;
+        }
+
+        .controls-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .control-group {
+            background: var(--bg-card);
+            padding: 1.5rem;
+            border-radius: 16px;
+            border: 1px solid var(--border-color);
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        .control-group:hover {
+            border-color: var(--ocean-blue);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px -10px rgba(14, 165, 233, 0.2);
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            color: var(--rain-blue);
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        select, button {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        select:hover, select:focus {
+            border-color: var(--ocean-blue);
+            outline: none;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            flex: 1;
+            min-width: 100px;
+            background: linear-gradient(135deg, var(--primary-blue), var(--ocean-blue));
+            border: none;
+            font-weight: 600;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .btn:hover::before {
+            left: 100%;
+        }
+
+        .btn.active {
+            background: linear-gradient(135deg, var(--storm-purple), var(--rain-blue));
+            box-shadow: 0 0 20px rgba(124, 58, 237, 0.4);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-card);
+            border-color: var(--ocean-blue);
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .chart-container {
+            background: var(--bg-card);
+            padding: 2rem;
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .chart-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--ocean-blue), var(--storm-purple), var(--rain-blue));
+        }
+
+        .chart-container.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .chart-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .chart-title::before {
+            content: '';
+            width: 4px;
+            height: 24px;
+            background: linear-gradient(to bottom, var(--ocean-blue), var(--storm-purple));
+            border-radius: 2px;
+        }
+
+        .chart-description {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-bottom: 1.5rem;
+            line-height: 1.5;
+            font-style: italic;
+        }
+
+        .chart-wrapper {
+            position: relative;
+            height: 350px;
+        }
+
+        .chart-wrapper.large {
+            height: 500px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            padding: 1.5rem;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--ocean-blue);
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--rain-blue), var(--storm-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .heatmap-container {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 1rem;
+            overflow-x: auto;
+        }
+
+        .heatmap-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 4px;
+            min-width: 400px;
+        }
+
+        .heatmap-cell {
+            aspect-ratio: 1;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .heatmap-cell:hover {
+            transform: scale(1.1);
+            z-index: 10;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+        }
+
+        .heatmap-label {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            font-weight: 600;
+            padding-right: 0.5rem;
+        }
+
+        .tooltip {
+            position: fixed;
+            background: rgba(15, 23, 42, 0.95);
+            border: 1px solid var(--ocean-blue);
+            padding: 1rem;
+            border-radius: 8px;
+            pointer-events: none;
+            z-index: 1000;
+            display: none;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .legend-bar {
+            height: 20px;
+            background: linear-gradient(to right, #38bdf8, #0ea5e9, #7c3aed, #dc2626);
+            border-radius: 10px;
+            margin-top: 1rem;
+            position: relative;
+        }
+
+        .legend-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 0.5rem;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        @media (max-width: 968px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .chart-wrapper.large {
+                height: 350px;
+            }
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.1);
+            border-radius: 50%;
+            border-top-color: var(--ocean-blue);
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .uncertainty-band {
+            fill: rgba(56, 189, 248, 0.1);
+            stroke: none;
+        }
+    </style>
+<base target="_blank">
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Dashboard de Análise de Precipitação Extrema</h1>
+        <p class="subtitle">Curvas IDF (Intensidade-Duração-Frequência) com Análise de Incertezas</p>
+    </header>
+
+    <div class="controls-grid">
+        <div class="control-group">
+            <label>Visualização Principal</label>
+            <div class="button-group">
+                <button class="btn active" onclick="switchView('idf')">Curvas IDF</button>
+                <button class="btn" onclick="switchView('seasonal')">Comparativo Sazonal</button>
+                <button class="btn" onclick="switchView('return')">Período de Retorno</button>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <label>Métrica de Exibição</label>
+            <select id="metricSelect" onchange="updateCharts()">
+                <option value="estimate">Estimativa (mm)</option>
+                <option value="intensity">Intensidade (mm/h)</option>
+                <option value="uncertainty">Intervalo de Confiança</option>
+            </select>
+        </div>
+
+        <div class="control-group">
+            <label>Períodos de Retorno</label>
+            <div class="button-group">
+                <button class="btn btn-secondary active" onclick="toggleReturn(2)" id="ret2">2 anos</button>
+                <button class="btn btn-secondary active" onclick="toggleReturn(5)" id="ret5">5 anos</button>
+                <button class="btn btn-secondary active" onclick="toggleReturn(10)" id="ret10">10 anos</button>
+                <button class="btn btn-secondary active" onclick="toggleReturn(50)" id="ret50">50 anos</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="stats-grid" id="statsContainer">
+        <!-- Stats will be injected here -->
+    </div>
+
+    <div class="dashboard-grid" id="mainDashboard">
+        <div class="chart-container full-width">
+            <div class="chart-title">Curvas IDF - Precipitação vs Duração</div>
+            <div class="chart-wrapper large">
+                <canvas id="mainChart"></canvas>
+            </div>
+        </div>
+
+        <div class="chart-container">
+            <div class="chart-title">Mapa de Calor Sazonal</div>
+            <p class="chart-description">
+                Este mapa mostra a média de precipitação (ou intensidade) para cada combinação de estação do ano (linhas) e duração do evento (colunas). 
+                Cores mais quentes (vermelho/laranja) indicam maiores volumes de chuva, enquanto cores frias (azul) indicam precipitações mais moderadas. 
+                Passe o mouse sobre as células para ver valores exatos.
+            </p>
+            <div class="heatmap-container" id="heatmapContainer">
+                <!-- Heatmap will be generated here -->
+            </div>
+            <div class="legend-bar"></div>
+            <div class="legend-labels">
+                <span>Baixa</span>
+                <span>Moderada</span>
+                <span>Alta</span>
+                <span>Extrema</span>
+            </div>
+        </div>
+
+        <div class="chart-container">
+            <div class="chart-title">Distribuição de Incertezas</div>
+            <p class="chart-description">
+                Gráfico de barras mostrando o percentual médio de incerteza (intervalo entre limite inferior e superior) para cada duração e estação. 
+                Barras mais altas indicam menor confiança na estimativa, comum em eventos raros (TR50) ou estações com alta variabilidade.
+            </p>
+            <div class="chart-wrapper">
+                <canvas id="uncertaintyChart"></canvas>
+            </div>
+        </div>
+
+        <div class="chart-container">
+            <div class="chart-title">Análise Temporal por Estação</div>
+            <p class="chart-description">
+                Visualização radar comparando o comportamento médio das quatro estações do ano. Cada eixo representa uma estação, 
+                e as linhas mostram como a precipitação varia entre Verão (DJF), Outono (MAM), Inverno (JJA) e Primavera (SON).
+            </p>
+            <div class="chart-wrapper">
+                <canvas id="seasonalChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="tooltip" id="tooltip"></div>
+
+<script>
+// Dados estruturados
+const rawData = [
+    ["1h","DJF",2,17.26,23.85,30.45], ["1h","DJF",5,27.02,36.38,45.75], ["1h","DJF",10,31.75,44.55,57.34], ["1h","DJF",50,34.6,62.14,89.69],
+    ["1h","MAM",2,32.35,37.95,43.54], ["1h","MAM",5,41.31,45.28,49.25], ["1h","MAM",10,44.89,47.81,50.73], ["1h","MAM",50,48.21,50.38,52.55],
+    ["1h","JJA",2,17.81,20.95,24.09], ["1h","JJA",5,22.74,26.33,29.92], ["1h","JJA",10,25.14,29.25,33.36], ["1h","JJA",50,27.65,34.26,40.88],
+    ["1h","SON",2,6.5,8.85,11.2], ["1h","SON",5,9.91,13.36,16.81], ["1h","SON",10,11.57,16.4,21.23], ["1h","SON",50,12.26,23.22,34.19],
+    ["3h","DJF",2,21.22,31.75,42.28], ["3h","DJF",5,35.16,53.9,72.64], ["3h","DJF",10,40.89,71.37,101.85], ["3h","DJF",50,30.75,119.64,208.53],
+    ["3h","MAM",2,38.46,47.71,56.95], ["3h","MAM",5,53.23,63.39,73.56], ["3h","MAM",10,60.33,71.59,82.85], ["3h","MAM",50,68.23,85.04,101.84],
+    ["3h","JJA",2,31.32,37.44,43.56], ["3h","JJA",5,40.74,48.34,55.93], ["3h","JJA",10,45.42,54.68,63.94], ["3h","JJA",50,50.05,66.54,83.03],
+    ["3h","SON",2,8.83,12.44,16.04], ["3h","SON",5,13.66,19.74,25.83], ["3h","SON",10,15.57,25.33,35.08], ["3h","SON",50,11.87,40.15,68.43],
+    ["6h","DJF",2,24.81,37.68,50.54], ["6h","DJF",5,41.57,65.04,88.51], ["6h","DJF",10,48.05,86.97,125.89], ["6h","DJF",50,31.93,148.92,265.91],
+    ["6h","MAM",2,45.45,57.88,70.32], ["6h","MAM",5,65.03,79.76,94.49], ["6h","MAM",10,74.71,91.96,109.21], ["6h","MAM",50,85.44,113.62,141.8],
+    ["6h","JJA",2,41.49,50.86,60.23], ["6h","JJA",5,55.79,67.92,80.04], ["6h","JJA",10,62.99,78.17,93.35], ["6h","JJA",50,70.25,98.13,126],
+    ["6h","SON",2,10.26,15.14,20.03], ["6h","SON",5,16.8,23.71,30.62], ["6h","SON",10,18.9,29.84,40.79], ["6h","SON",50,10.31,44.77,79.23],
+    ["12h","DJF",2,29.34,43.77,58.19], ["12h","DJF",5,48.65,73.02,97.38], ["12h","DJF",10,56.27,95.38,134.48], ["12h","DJF",50,41.17,154.68,268.2],
+    ["12h","MAM",2,59.11,74.64,90.18], ["12h","MAM",5,83.13,97.94,112.74], ["12h","MAM",10,94.05,109.03,124], ["12h","MAM",50,101.14,125.31,149.47],
+    ["12h","JJA",2,49.19,64.96,80.72], ["12h","JJA",5,72.29,89.34,106.38], ["12h","JJA",10,82.65,102.8,122.94], ["12h","JJA",50,82.67,126.41,170.15],
+    ["12h","SON",2,11.96,17.61,23.25], ["12h","SON",5,19.02,27.57,36.12], ["12h","SON",10,19.96,35.47,50.99], ["12h","SON",50,2.04,57.49,117.02],
+    ["24h","DJF",2,34.24,52.12,70], ["24h","DJF",5,57.62,84.57,111.52], ["24h","DJF",10,64.25,108.96,153.67], ["24h","DJF",50,23.71,172.18,320.65],
+    ["24h","MAM",2,72.6,90.96,109.32], ["24h","MAM",5,100.12,118.42,136.71], ["24h","MAM",10,112.51,132.38,152.26], ["24h","MAM",50,115.99,154.58,193.17],
+    ["24h","JJA",2,74.34,93.14,111.95], ["24h","JJA",5,104.3,121.42,138.54], ["24h","JJA",10,117.94,133.93,149.92], ["24h","JJA",50,131.47,150.77,170.08],
+    ["24h","SON",2,13.66,20.95,28.24], ["24h","SON",5,21.16,35.11,49.05], ["24h","SON",10,16.69,49.16,81.64], ["24h","SON",50,72.07,102.33,276.73]
+];
+
+// Processamento dos dados
+const seasons = ['DJF', 'MAM', 'JJA', 'SON'];
+const durations = ['1h', '3h', '6h', '12h', '24h'];
+const returnPeriods = [2, 5, 10, 50];
+const seasonColors = {
+    'DJF': '#f59e0b', // Summer - Orange
+    'MAM': '#10b981', // Autumn - Green
+    'JJA': '#0ea5e9', // Winter - Blue
+    'SON': '#8b5cf6'  // Spring - Purple
+};
+
+const seasonNames = {
+    'DJF': 'Verão',
+    'MAM': 'Outono',
+    'JJA': 'Inverno',
+    'SON': 'Primavera'
+};
+
+let activeReturnPeriods = [2, 5, 10, 50];
+let currentView = 'idf';
+let mainChart, uncertaintyChart, seasonalChart;
+
+function processData() {
+    return rawData.map(row => ({
+        duration: row[0],
+        season: row[1],
+        returnPeriod: row[2],
+        lower: row[3],
+        estimate: row[4],
+        upper: row[5],
+        intensity: row[4] / parseInt(row[0]),
+        uncertainty: ((row[5] - row[3]) / row[4]) * 100
+    }));
+}
+
+const data = processData();
+
+function initCharts() {
+    updateStats();
+    createMainChart();
+    createHeatmap();
+    createUncertaintyChart();
+    createSeasonalChart();
+}
+
+function updateStats() {
+    const filtered = data.filter(d => activeReturnPeriods.includes(d.returnPeriod));
+    const maxPrecip = Math.max(...filtered.map(d => d.estimate));
+    const avgUncertainty = filtered.reduce((acc, d) => acc + d.uncertainty, 0) / filtered.length;
+    const maxIntensity = Math.max(...filtered.map(d => d.intensity));
+    
+    const statsHtml = `
+        <div class="stat-card">
+            <div class="stat-value">${maxPrecip.toFixed(1)}</div>
+            <div class="stat-label">Máxima Precipitação (mm)</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">${maxIntensity.toFixed(1)}</div>
+            <div class="stat-label">Pico de Intensidade (mm/h)</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">${avgUncertainty.toFixed(1)}%</div>
+            <div class="stat-label">Incerteza Média</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">${filtered.length}</div>
+            <div class="stat-label">Registros Analisados</div>
+        </div>
+    `;
+    
+    document.getElementById('statsContainer').innerHTML = statsHtml;
+}
+
+function createMainChart() {
+    const ctx = document.getElementById('mainChart').getContext('2d');
+    const datasets = [];
+    
+    seasons.forEach((season, sIdx) => {
+        activeReturnPeriods.forEach((rp, rIdx) => {
+            const seasonData = data.filter(d => d.season === season && d.returnPeriod === rp)
+                .sort((a, b) => durations.indexOf(a.duration) - durations.indexOf(b.duration));
+            
+            const metric = document.getElementById('metricSelect').value;
+            const values = seasonData.map(d => metric === 'intensity' ? d.intensity : d.estimate);
+            
+            datasets.push({
+                label: `${seasonNames[season]} - ${rp} anos`,
+                data: values,
+                borderColor: seasonColors[season],
+                backgroundColor: seasonColors[season] + '20',
+                borderWidth: 2 + (rIdx * 0.5),
+                borderDash: rIdx > 1 ? [5, 5] : [],
+                tension: 0.4,
+                pointRadius: 4,
+                pointHoverRadius: 6,
+                fill: false
+            });
+        });
+    });
+
+    if (mainChart) mainChart.destroy();
+    
+    mainChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: durations,
+            datasets: datasets
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                mode: 'index',
+                intersect: false
+            },
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: {
+                        color: '#94a3b8',
+                        font: { size: 11 },
+                        boxWidth: 12
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                    titleColor: '#38bdf8',
+                    bodyColor: '#f8fafc',
+                    borderColor: '#0ea5e9',
+                    borderWidth: 1,
+                    callbacks: {
+                        label: function(context) {
+                            return context.dataset.label + ': ' + context.parsed.y.toFixed(2) + 
+                                   (document.getElementById('metricSelect').value === 'intensity' ? ' mm/h' : ' mm');
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    type: 'linear',
+                    grid: {
+                        color: '#334155',
+                        drawBorder: false
+                    },
+                    ticks: {
+                        color: '#94a3b8'
+                    },
+                    title: {
+                        display: true,
+                        text: document.getElementById('metricSelect').value === 'intensity' ? 'Intensidade (mm/h)' : 'Precipitação (mm)',
+                        color: '#38bdf8'
+                    }
+                },
+                x: {
+                    grid: {
+                        color: '#334155',
+                        drawBorder: false
+                    },
+                    ticks: {
+                        color: '#94a3b8'
+                    },
+                    title: {
+                        display: true,
+                        text: 'Duração',
+                        color: '#38bdf8'
+                    }
+                }
+            }
+        }
+    });
+}
+
+function createHeatmap() {
+    const container = document.getElementById('heatmapContainer');
+    const metric = document.getElementById('metricSelect').value;
+    
+    // Calculate max value for normalization
+    const filtered = data.filter(d => activeReturnPeriods.includes(d.returnPeriod));
+    const values = filtered.map(d => metric === 'intensity' ? d.intensity : d.estimate);
+    const maxVal = Math.max(...values);
+    const minVal = Math.min(...values);
+    
+    let html = '<div class="heatmap-label">';
+    durations.forEach(d => {
+        html += `<div>${d}</div>`;
+    });
+    html += '</div><div class="heatmap-grid">';
+    
+    seasons.forEach(season => {
+        durations.forEach(duration => {
+            const cellData = data.filter(d => d.season === season && d.duration === duration && activeReturnPeriods.includes(d.returnPeriod));
+            const avgValue = cellData.reduce((acc, d) => acc + (metric === 'intensity' ? d.intensity : d.estimate), 0) / cellData.length;
+            
+            const normalized = (avgValue - minVal) / (maxVal - minVal);
+            const hue = (1 - normalized) * 240; // Blue to Red
+            const color = `hsla(${hue}, 70%, 50%, 0.8)`;
+            const textColor = normalized > 0.5 ? 'white' : 'white';
+            
+            html += `
+                <div class="heatmap-cell" 
+                     style="background: ${color}; color: ${textColor}"
+                     onmousemove="showTooltip(event, '${season}', '${duration}', ${avgValue.toFixed(1)}, '${metric}')"
+                     onmouseout="hideTooltip()">
+                    ${avgValue.toFixed(0)}
+                </div>
+            `;
+        });
+    });
+    
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+function createUncertaintyChart() {
+    const ctx = document.getElementById('uncertaintyChart').getContext('2d');
+    const datasets = [];
+    
+    seasons.forEach(season => {
+        const seasonData = data.filter(d => d.season === season && activeReturnPeriods.includes(d.returnPeriod));
+        const grouped = {};
+        
+        seasonData.forEach(d => {
+            if (!grouped[d.duration]) grouped[d.duration] = [];
+            grouped[d.duration].push(d.uncertainty);
+        });
+        
+        const avgUncertainty = durations.map(d => {
+            const vals = grouped[d] || [0];
+            return vals.reduce((a, b) => a + b, 0) / vals.length;
+        });
+        
+        datasets.push({
+            label: seasonNames[season],
+            data: avgUncertainty,
+            backgroundColor: seasonColors[season] + '80',
+            borderColor: seasonColors[season],
+            borderWidth: 2
+        });
+    });
+
+    if (uncertaintyChart) uncertaintyChart.destroy();
+    
+    uncertaintyChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: durations,
+            datasets: datasets
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    labels: { color: '#94a3b8' }
+                }
+            },
+            scales: {
+                y: {
+                    type: 'linear',
+                    grid: { color: '#334155' },
+                    ticks: { color: '#94a3b8' },
+                    title: {
+                        display: true,
+                        text: 'Incerteza (%)',
+                        color: '#38bdf8'
+                    }
+                },
+                x: {
+                    grid: { color: '#334155' },
+                    ticks: { color: '#94a3b8' }
+                }
+            }
+        }
+    });
+}
+
+function createSeasonalChart() {
+    const ctx = document.getElementById('seasonalChart').getContext('2d');
+    const datasets = returnPeriods.map((rp, idx) => {
+        const values = seasons.map(season => {
+            const seasonData = data.filter(d => d.season === season && d.returnPeriod === rp);
+            return seasonData.reduce((acc, d) => acc + d.estimate, 0) / seasonData.length;
+        });
+        
+        return {
+            label: `${rp} anos`,
+            data: values,
+            backgroundColor: `hsla(${200 + (idx * 40)}, 70%, 50%, 0.2)`,
+            borderColor: `hsla(${200 + (idx * 40)}, 70%, 50%, 1)`,
+            borderWidth: 2,
+            fill: true
+        };
+    }).filter((_, idx) => activeReturnPeriods.includes(returnPeriods[idx]));
+
+    if (seasonalChart) seasonalChart.destroy();
+    
+    seasonalChart = new Chart(ctx, {
+        type: 'radar',
+        data: {
+            labels: seasons.map(s => seasonNames[s]),
+            datasets: datasets
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    labels: { color: '#94a3b8' }
+                }
+            },
+            scales: {
+                r: {
+                    grid: { color: '#334155' },
+                    pointLabels: { color: '#94a3b8' },
+                    ticks: { color: '#94a3b8', backdropColor: 'transparent' }
+                }
+            }
+        }
+    });
+}
+
+function showTooltip(event, season, duration, value, metric) {
+    const tooltip = document.getElementById('tooltip');
+    const unit = metric === 'intensity' ? 'mm/h' : 'mm';
+    const metricName = metric === 'intensity' ? 'Intensidade média' : 'Precipitação média';
+    
+    tooltip.innerHTML = `
+        <strong>${seasonNames[season]} - ${duration}</strong><br>
+        ${metricName}: ${value} ${unit}<br>
+        <small>Média dos períodos de retorno selecionados</small>
+    `;
+    tooltip.style.display = 'block';
+    tooltip.style.left = event.clientX + 10 + 'px';
+    tooltip.style.top = event.clientY - 30 + 'px';
+}
+
+function hideTooltip() {
+    document.getElementById('tooltip').style.display = 'none';
+}
+
+function switchView(view) {
+    currentView = view;
+    document.querySelectorAll('.control-group:first-child .btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    event.target.classList.add('active');
+    
+    if (view === 'idf') {
+        document.getElementById('mainDashboard').style.display = 'grid';
+    }
+    updateCharts();
+}
+
+function toggleReturn(period) {
+    const btn = document.getElementById(`ret${period}`);
+    if (activeReturnPeriods.includes(period)) {
+        if (activeReturnPeriods.length > 1) {
+            activeReturnPeriods = activeReturnPeriods.filter(p => p !== period);
+            btn.classList.remove('active');
+        }
+    } else {
+        activeReturnPeriods.push(period);
+        btn.classList.add('active');
+    }
+    updateCharts();
+}
+
+function updateCharts() {
+    updateStats();
+    createMainChart();
+    createHeatmap();
+    createUncertaintyChart();
+    createSeasonalChart();
+}
+
+// Inicialização
+window.onload = initCharts;
+</script>
+
+</body>
+</html>

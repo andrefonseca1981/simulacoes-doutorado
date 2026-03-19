@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<title>Dashboard Defesa de Tese</title>
+
+<style>
+
+body{
+font-family: Arial, sans-serif;
+margin:0;
+background:#f4f6f9;
+}
+
+header{
+background:#1f3c5c;
+color:white;
+padding:15px;
+text-align:center;
+font-size:22px;
+}
+
+.container{
+display:flex;
+height:90vh;
+}
+
+.menu{
+width:30%;
+background:#ffffff;
+border-right:2px solid #ddd;
+padding:10px;
+overflow-y:auto;
+}
+
+.menu button{
+width:100%;
+padding:12px;
+margin:6px 0;
+border:none;
+background:#2d6cdf;
+color:white;
+font-size:14px;
+cursor:pointer;
+border-radius:6px;
+}
+
+.menu button:hover{
+background:#1f4fbf;
+}
+
+.content{
+width:70%;
+padding:25px;
+}
+
+.box{
+background:white;
+padding:25px;
+border-radius:8px;
+box-shadow:0 2px 6px rgba(0,0,0,0.1);
+font-size:18px;
+line-height:1.6;
+}
+
+.titulo{
+font-weight:bold;
+margin-bottom:15px;
+font-size:20px;
+}
+
+</style>
+
+<script>
+
+function mostrar(texto){
+
+document.getElementById("resposta").innerHTML = texto;
+
+}
+
+</script>
+
+</head>
+
+<body>
+
+<header>
+Perguntas da Banca – Defesa de Doutorado
+</header>
+
+<div class="container">
+
+<div class="menu">
+
+<button onclick="mostrar(pergunta1)">GEV série curta</button>
+<button onclick="mostrar(pergunta2)">Estacionariedade</button>
+<button onclick="mostrar(pergunta3)">SMAP 9 km</button>
+<button onclick="mostrar(pergunta4)">Radar dBZ</button>
+<button onclick="mostrar(pergunta5)">RMSE x MAE</button>
+<button onclick="mostrar(pergunta6)">Dois eventos</button>
+<button onclick="mostrar(pergunta7)">Escala dados</button>
+<button onclick="mostrar(pergunta8)">Block vs POT</button>
+<button onclick="mostrar(pergunta9)">Generalização</button>
+<button onclick="mostrar(pergunta10)">Contribuição</button>
+
+</div>
+
+<div class="content">
+
+<div class="box" id="resposta">
+
+Clique em uma pergunta à esquerda para visualizar a resposta.
+
+</div>
+
+</div>
+
+</div>
+
+<script>
+
+var pergunta1 = `
+<div class='titulo'>Série curta para GEV</div>
+Mesmo com séries relativamente curtas, a teoria de valores extremos mostra que os máximos em blocos convergem para a distribuição GEV.  
+A série de 2005–2021 permite uma estimativa probabilística útil, desde que os resultados sejam interpretados com cautela e acompanhados de intervalos de confiança.
+`;
+
+var pergunta2 = `
+<div class='titulo'>Estacionariedade</div>
+Os períodos de retorno estimados representam a climatologia do período analisado.  
+Em um contexto de mudanças climáticas, esses valores devem ser interpretados como estimativas condicionadas ao clima recente e não necessariamente como projeções futuras.
+`;
+
+var pergunta3 = `
+<div class='titulo'>SMAP resolução</div>
+O SMAP não foi utilizado para representar diretamente a umidade da encosta.  
+Ele foi utilizado como indicador do estado hidrológico regional, sendo interpretado em conjunto com sensores geotécnicos e precipitação.
+`;
+
+var pergunta4 = `
+<div class='titulo'>Radar dBZ</div>
+A conversão direta de refletividade para chuva depende de relações Z-R que variam com o tipo de precipitação.  
+Por isso o radar foi utilizado principalmente para caracterizar a organização e intensidade relativa do sistema precipitante.
+`;
+
+var pergunta5 = `
+<div class='titulo'>RMSE e MAE</div>
+MAE representa o erro médio típico do modelo.  
+RMSE evidencia erros maiores porque eleva os erros ao quadrado.  
+Utilizar as duas métricas permite avaliar tanto o erro médio quanto a presença de discrepâncias maiores.
+`;
+
+var pergunta6 = `
+<div class='titulo'>Apenas dois eventos</div>
+Os eventos foram utilizados como estudos de caso exploratórios.  
+O objetivo foi discutir mecanismos hidrológicos distintos de deflagração e não realizar generalizações estatísticas.
+`;
+
+var pergunta7 = `
+<div class='titulo'>Escalas diferentes</div>
+A análise utiliza abordagem multiescalar:  
+SMAP representa o estado regional do solo, sensores indicam a resposta local e radar caracteriza a estrutura da precipitação.
+`;
+
+var pergunta8 = `
+<div class='titulo'>Block maxima</div>
+O método block maxima foi escolhido pela simplicidade e robustez.  
+O método POT exige definição cuidadosa de limiar e tratamento de dependência entre eventos.
+`;
+
+var pergunta9 = `
+<div class='titulo'>Generalização</div>
+Os valores obtidos são específicos para Recife.  
+Entretanto, a abordagem metodológica integrando extremos, umidade do solo e radar pode ser aplicada em outras cidades tropicais.
+`;
+
+var pergunta10 = `
+<div class='titulo'>Principal contribuição</div>
+A tese integra duas perspectivas:  
+quantificação probabilística de extremos subdiários por GEV e interpretação física da deflagração de deslizamentos considerando o estado antecedente de umidade do solo.
+`;
+
+</script>
+
+</body>
+</html>

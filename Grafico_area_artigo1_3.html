@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Figura 7 Pro - André Fonseca</title>
+  <script defer src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+  <style>
+    :root{
+      --bg: #f8f9fa; --card: #ffffff; --text: #2c3e50; --muted: #6c757d;
+      --shadow: 0 10px 25px rgba(0,0,0,0.10); --radius: 12px; --accent: #377eb8;
+    }
+    body{ font-family: "Segoe UI", sans-serif; margin: 20px; background: var(--bg); color: var(--text); }
+    #chart-container{ background: var(--card); padding: 25px; border-radius: var(--radius); box-shadow: var(--shadow); max-width: 1200px; margin: 0 auto; }
+    .toolbar{ display: flex; flex-wrap: wrap; gap: 15px; margin: 15px 0; padding: 15px; background: #f3f5f7; border-radius: 10px; border: 1px solid #e9ecef; align-items: center; }
+    .tool-group { display: flex; align-items: center; gap: 8px; border-right: 1px solid #ddd; padding-right: 15px; }
+    .tool-group:last-child { border-right: none; }
+    button.snap { background: var(--accent); color: white; border: none; font-weight: bold; transition: 0.2s; }
+    button.snap:hover { background: #295d8a; }
+    .checks { display: flex; gap: 8px; flex-wrap: wrap; }
+    .chk { display: inline-flex; align-items: center; gap: 5px; padding: 4px 12px; background: white; border: 1px solid #ddd; border-radius: 20px; cursor: pointer; font-size: 0.85rem; }
+    #interactiveChart{ width: 100%; height: 800px; }
+    h2, p.sub { text-align: center; margin: 5px; }
+  </style>
+</head>
+<body>
+  <div id="chart-container">
+    <h2>Probabilidades Sazonais de Precipitação Extrema</h2>
+    <p class="sub">André F. Fonseca et al. (2025) | Recife, PE</p>
+
+    <div class="toolbar">
+      <div class="tool-group">
+        <label><input type="checkbox" id="linesOnly" /> Linhas apenas</label>
+      </div>
+      <div class="tool-group">
+        <label>Opacidade:</label>
+        <input id="fillOpacity" type="range" min="0" max="0.7" step="0.05" value="0.3" />
+      </div>
+      <div class="tool-group">
+        <button id="showAll">Ver Tudo</button>
+        <button id="hideAll">Ocultar</button>
+        <button class="snap" onclick="saveImage()">Capturar Slide</button>
+      </div>
+      <div class="checks" id="accChecks"></div>
+    </div>
+
+    <div id="interactiveChart"></div>
+  </div>
+
+  <script>
+    window.addEventListener("DOMContentLoaded", () => {
+      const periods = ["DJF", "MAM", "JJA", "SON"];
+      const accumulations = ["24h", "12h", "6h", "3h", "1h"];
+      const thresholds = ["(a) 30 mm", "(b) 40 mm", "(c) 50 mm", "(d) 100 mm"];
+      const colors = {
+        "24h": "#e41a1c", "12h": "#4daf4a", "6h": "#377eb8", "3h": "#ff7f00", "1h": "#984ea3"
+      };
+
+      const dataMatrix = {
+        "(a) 30 mm": { "1h":[32.87,74.38,8.16,0.41], "3h":[53.5,84.3,74.7,5.8], "6h":[63.41,89.43,90.56,9.82], "12h":[72.11,93.95,91.9,16.08], "24h":[81.36,97.72,94.89,27.09] },
+        "(b) 40 mm": { "1h":[14.8,42.03,0.1,0.04], "3h":[35.7,66.6,41.7,2], "6h":[46.36,78.14,73.67,3.29], "12h":[55.74,88.52,83.36,6.94], "24h":[67.06,95.05,91.68,15.38] },
+        "(c) 50 mm": { "1h":[6.15,2.95,0,0], "3h":[23.5,45,16.9,0.8], "6h":[33.15,63.14,51.73,1.18], "12h":[41.47,80.36,71.37,3.31], "24h":[52.78,90.5,87.12,9.65] },
+        "(d) 100 mm": { "1h":[0.05,0.07,0,0], "3h":[3.7,0.07,0,0.03], "6h":[6.84,5.92,1.68,0.02], "12h":[8.72,17.87,11.68,0.23], "24h":[12.84,39.12,42.36,2.1] }
+      };
+
+      const traces = [];
+      thresholds.forEach((thresh, tIdx) => {
+        accumulations.forEach((acc) => {
+          traces.push({
+            x: periods, y: dataMatrix[thresh][acc], name: acc,
+            legendgroup: acc, showlegend: tIdx === 0,
+            xaxis: "x" + (tIdx === 0 ? "" : tIdx + 1),
+            yaxis: "y" + (tIdx === 0 ? "" : tIdx + 1),
+            type: "scatter", mode: "lines", fill: "tozeroy",
+            line: { color: colors[acc], width: 2.5 },
+            fillcolor: colors[acc] + "4D", // Alpha fixo inicial
+            hovertemplate: `<b>${thresh}</b><br>Período: %{x}<br>Duração: ${acc}<br>Prob: %{y:.1f}%<extra></extra>`
+          });
+        });
+      });
+
+      const commonAxis = { 
+        gridcolor: "#eee", zeroline: false, 
+        showspikes: true, spikecolor: "#999", spikethickness: 1, spikemode: 'across+marker' 
+      };
+
+      const layout = {
+        grid: { rows: 2, columns: 2, pattern: "independent" },
+        hovermode: "x unified",
+        margin: { t: 60, b: 80, l: 80, r: 40 },
+        legend: { orientation: "h", x: 0.5, xanchor: "center", y: -0.15 },
+        annotations: thresholds.map((t, i) => ({
+          text: `<b>${t}</b>`, showarrow: false, font: {size: 14},
+          xref: 'paper', yref: 'paper', x: i % 2 === 0 ? 0.2 : 0.8, y: i < 2 ? 1.05 : 0.45
+        })),
+        yaxis: { ...commonAxis, range: [0, 105], title: "Probabilidade (%)" },
+        yaxis2: { ...commonAxis, range: [0, 105] },
+        yaxis3: { ...commonAxis, range: [0, 105], title: "Probabilidade (%)" },
+        yaxis4: { ...commonAxis, range: [0, 105] },
+        xaxis: commonAxis, xaxis2: commonAxis, xaxis3: commonAxis, xaxis4: commonAxis
+      };
+
+      Plotly.newPlot('interactiveChart', traces, layout, {responsive: true, displaylogo: false});
+
+      // Controles
+      document.getElementById("linesOnly").addEventListener("change", (e) => {
+        Plotly.restyle('interactiveChart', { fill: e.target.checked ? "none" : "tozeroy" });
+      });
+
+      document.getElementById("fillOpacity").addEventListener("input", (e) => {
+        const op = Math.round(e.target.value * 255).toString(16).padStart(2, '0');
+        const colorsUpdate = accumulations.map(a => colors[a] + op);
+        const update = { fillcolor: Array(4).fill(colorsUpdate).flat() };
+        Plotly.restyle('interactiveChart', update);
+      });
+
+      // Checkboxes de duração dinâmicos
+      const checkDiv = document.getElementById("accChecks");
+      accumulations.forEach(acc => {
+        const l = document.createElement("label"); l.className="chk";
+        l.innerHTML = `<input type="checkbox" checked data-acc="${acc}"> ${acc}`;
+        l.style.borderLeft = `4px solid ${colors[acc]}`;
+        checkDiv.appendChild(l);
+      });
+
+      checkDiv.addEventListener("change", (e) => {
+        const acc = e.target.dataset.acc;
+        const visibility = e.target.checked ? true : "legendonly";
+        const indices = traces.map((t, i) => t.name === acc ? i : null).filter(n => n !== null);
+        Plotly.restyle('interactiveChart', { visible: visibility }, indices);
+      });
+    });
+
+    function saveImage() {
+      Plotly.downloadImage('interactiveChart', {format: 'png', width: 1200, height: 800, filename: 'Probabilidades_Recife_Fonseca'});
+    }
+  </script>
+</body>
+</html>

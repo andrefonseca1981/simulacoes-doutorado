@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard GEV - Análise de Caudas</title>
+    <!-- Carregando Chart.js para os gráficos -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --accent-color: #3498db;
+            --bg-color: #f4f7f6;
+            --card-bg: #ffffff;
+            --text-color: #333;
+            --weibull-color: #27ae60; /* Verde */
+            --gumbel-color: #f39c12; /* Amarelo/Laranja */
+            --frechet-color: #c0392b; /* Vermelho */
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            max-width: 1200px;
+            width: 100%;
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            max-width: 800px;
+        }
+
+        h1 {
+            color: var(--primary-color);
+            margin-bottom: 10px;
+        }
+
+        p.subtitle {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            padding: 25px;
+            transition: transform 0.2s;
+        }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .slider-container {
+            margin-top: 10px;
+        }
+
+        input[type=range] {
+            width: 100%;
+            cursor: pointer;
+        }
+
+        .info-box {
+            padding: 15px;
+            border-radius: 8px;
+            background-color: #ecf0f1;
+            border-left: 5px solid #bdc3c7;
+            transition: all 0.3s ease;
+        }
+
+        .info-title {
+            font-weight: bold;
+            font-size: 1.2em;
+            margin-bottom: 5px;
+            display: block;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 400px;
+            width: 100%;
+        }
+
+        .explanation {
+            grid-column: 1 / -1;
+            margin-top: 20px;
+        }
+
+        .explanation h3 {
+            color: var(--primary-color);
+            border-bottom: 2px solid var(--accent-color);
+            display: inline-block;
+            padding-bottom: 5px;
+        }
+
+        .highlight {
+            font-weight: bold;
+        }
+
+        /* Cores dinâmicas para o box de informação */
+        .status-weibull { border-color: var(--weibull-color); background-color: #e8f8f5; color: #145a32; }
+        .status-gumbel { border-color: var(--gumbel-color); background-color: #fef9e7; color: #9a7d0a; }
+        .status-frechet { border-color: var(--frechet-color); background-color: #fdedec; color: #943126; }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 8px 0;
+            font-size: 0.95em;
+        }
+
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 10px;
+            flex-shrink: 0;
+        }
+
+        @media (max-width: 768px) {
+            .container { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <h1>Distribuição Generalizada de Valores Extremos (GEV)</h1>
+        <p class="subtitle">Visualização didática do impacto do Parâmetro de Forma (ξ) nas caudas de distribuição de precipitação.</p>
+    </header>
+
+    <div class="container">
+        <!-- Painel de Controle -->
+        <div class="card controls">
+            <h2>Parâmetros</h2>
+            
+            <div class="slider-container">
+                <label for="xiSlider"><strong>Parâmetro de Forma (ξ):</strong> <span id="xiValue">0.00</span></label>
+                <input type="range" id="xiSlider" min="-0.5" max="0.5" step="0.01" value="0.0">
+                <div style="display: flex; justify-content: space-between; font-size: 0.8em; color: #777; margin-top: 5px;">
+                    <span>Cauda Finita (-0.5)</span>
+                    <span>Gumbel (0.0)</span>
+                    <span>Cauda Pesada (0.5)</span>
+                </div>
+            </div>
+
+            <div id="infoBox" class="info-box status-gumbel">
+                <span class="info-title" id="domainTitle">Domínio de Gumbel</span>
+                <span id="domainDesc">A cauda decai exponencialmente. Eventos extremos são possíveis, mas a probabilidade cai rapidamente.</span>
+            </div>
+
+            <div style="margin-top: 20px; font-size: 0.9em; color: #555;">
+                <p><strong>Legenda:</strong></p>
+                <div class="legend-item">
+                    <div class="legend-dot" style="background-color: var(--weibull-color);"></div>
+                    <span><strong>ξ &lt; 0:</strong> Weibull (Limite Superior Físico)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-dot" style="background-color: var(--gumbel-color);"></div>
+                    <span><strong>ξ ≈ 0:</strong> Gumbel (Decaimento Exponencial)</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-dot" style="background-color: var(--frechet-color);"></div>
+                    <span><strong>ξ &gt; 0:</strong> Fréchet (Cauda Pesada / Sem Limite)</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gráfico -->
+        <div class="card">
+            <div class="chart-container">
+                <canvas id="gevChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Explicação Didática -->
+        <div class="card explanation">
+            <h3>Por que isso importa para sua Tese?</h3>
+            <p>
+                Na análise de <strong>extremos de precipitação e riscos de deslizamentos</strong>, o comportamento da "cauda" da distribuição determina a estimativa de risco para eventos raros e catastróficos.
+            </p>
+            <ul>
+                <li>
+                    <span class="highlight" style="color: var(--weibull-color);">Cauda Finita (ξ &lt; 0):</span> 
+                    Indica que existe um limite físico máximo teórico para a intensidade da chuva na região. A probabilidade de exceder esse limite é zero. Comum em variáveis com limites físicos rígidos.
+                </li>
+                <li>
+                    <span class="highlight" style="color: var(--gumbel-color);">Cauda Exponencial (ξ ≈ 0):</span> 
+                    Não há um limite superior fixo, mas a probabilidade de eventos muito extremos decai rapidamente. É o modelo mais comum assumido inicialmente em hidrologia.
+                </li>
+                <li>
+                    <span class="highlight" style="color: var(--frechet-color);">Cauda Pesada (ξ &gt; 0):</span> 
+                    <strong>Cenário Crítico.</strong> A probabilidade decai lentamente ("polinomialmente"). Isso significa que eventos de intensidade extrema (muito além da média histórica) têm uma probabilidade significativamente maior de ocorrer do que nos outros modelos. Subestimar ξ aqui pode levar a falhas em sistemas de alerta precoce.
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // Configuração Inicial
+        const ctx = document.getElementById('gevChart').getContext('2d');
+        const slider = document.getElementById('xiSlider');
+        const xiValueDisplay = document.getElementById('xiValue');
+        const infoBox = document.getElementById('infoBox');
+        const domainTitle = document.getElementById('domainTitle');
+        const domainDesc = document.getElementById('domainDesc');
+
+        // Parâmetros fixos para demonstração (Loc e Scale)
+        const mu = 10;   // Localização
+        const sigma = 5; // Escala
+
+        // Função para calcular a PDF da GEV
+        function getGEVPDF(x, xi, mu, sigma) {
+            if (Math.abs(xi) < 0.0001) {
+                // Caso Gumbel (Limite quando xi -> 0)
+                const z = (x - mu) / sigma;
+                return (1/sigma) * Math.exp(-z - Math.exp(-z));
+            } else {
+                const z = (x - mu) / sigma;
+                const term = 1 + xi * z;
+                
+                // Domínio de validade: 1 + xi*z > 0
+                if (term <= 0) return 0;
+
+                const exponent = -Math.pow(term, -1/xi);
+                return (1/sigma) * Math.pow(term, -1/xi - 1) * Math.exp(exponent);
+            }
+        }
+
+        // Gerar dados iniciais
+        function generateData(xi) {
+            const labels = [];
+            const dataPoints = [];
+            // Faixa de X de 0 a 40 mm/h (ajustável)
+            for (let x = 0; x <= 40; x += 0.5) {
+                labels.push(x.toFixed(1));
+                dataPoints.push(getGEVPDF(x, xi, mu, sigma));
+            }
+            return { labels, dataPoints };
+        }
+
+        // Atualizar textos explicativos
+        function updateInfo(xi) {
+            xiValueDisplay.textContent = xi.toFixed(2);
+            
+            if (xi < -0.01) {
+                infoBox.className = 'info-box status-weibull';
+                domainTitle.textContent = "Domínio de Weibull (Cauda Finita)";
+                domainDesc.textContent = "Existe um limite máximo teórico. A probabilidade cai abruptamente para zero após certo ponto. Menor risco de eventos 'infinitos'.";
+            } else if (xi > 0.01) {
+                infoBox.className = 'info-box status-frechet';
+                domainTitle.textContent = "Domínio de Fréchet (Cauda Pesada)";
+                domainDesc.textContent = "ALTO RISCO. A cauda decai lentamente. Eventos extremamente raros têm probabilidade maior de ocorrer do que o esperado. Crucial para alertas de desastres.";
+            } else {
+                infoBox.className = 'info-box status-gumbel';
+                domainTitle.textContent = "Domínio de Gumbel (Cauda Exponencial)";
+                domainDesc.textContent = "Comportamento intermediário. Não há limite fixo, mas a probabilidade de extremos cai rapidamente. Modelo padrão em muitas aplicações.";
+            }
+        }
+
+        // Configurar Gráfico Chart.js
+        let chartData = generateData(0);
+        
+        const gevChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: chartData.labels,
+                datasets: [{
+                    label: 'Densidade de Probabilidade',
+                    data: chartData.dataPoints,
+                    borderColor: '#f39c12',
+                    backgroundColor: 'rgba(243, 156, 18, 0.2)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        callbacks: {
+                            label: function(context) {
+                                return `Probabilidade: ${context.parsed.y.toFixed(4)}`;
+                            }
+                        }
+                    },
+                    title: {
+                        display: true,
+                        text: 'Função Densidade de Probabilidade (PDF) da GEV',
+                        font: { size: 16, weight: 'bold' }
+                    }
+                },
+                scales: {
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Intensidade de Precipitação (mm/h)',
+                            font: { weight: 'bold' }
+                        },
+                        grid: { color: '#eee' }
+                    },
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Densidade de Probabilidade',
+                            font: { weight: 'bold' }
+                        },
+                        beginAtZero: true,
+                        grid: { color: '#eee' }
+                    }
+                },
+                interaction: {
+                    mode: 'nearest',
+                    axis: 'x',
+                    intersect: false
+                }
+            }
+        });
+
+        // Event Listener do Slider
+        slider.addEventListener('input', (e) => {
+            const xi = parseFloat(e.target.value);
+            const newData = generateData(xi);
+            
+            // Atualizar dados do gráfico
+            gevChart.data.datasets[0].data = newData.dataPoints;
+            
+            // Mudar cor baseada no domínio
+            let colorHex, colorRgb;
+            if (xi < -0.01) {
+                colorHex = '#27ae60'; // Verde
+                colorRgb = 'rgba(39, 174, 96, 0.2)';
+            } else if (xi > 0.01) {
+                colorHex = '#c0392b'; // Vermelho
+                colorRgb = 'rgba(192, 57, 43, 0.2)';
+            } else {
+                colorHex = '#f39c12'; // Amarelo
+                colorRgb = 'rgba(243, 156, 18, 0.2)';
+            }
+
+            gevChart.data.datasets[0].borderColor = colorHex;
+            gevChart.data.datasets[0].backgroundColor = colorRgb;
+            gevChart.update();
+
+            // Atualizar textos
+            updateInfo(xi);
+        });
+
+        // Inicializar texto
+        updateInfo(0);
+
+    </script>
+</body>
+</html>

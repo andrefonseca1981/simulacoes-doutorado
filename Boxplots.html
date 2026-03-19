@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard de Precipitação - Análise Estatística</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+        :root {
+            --bg-primary: #080b12;
+            --bg-card: #131820;
+            --border-color: #1e2633;
+            --text-primary: #e8ecf4;
+            --text-secondary: #7a8599;
+            --text-muted: #4a5568;
+            --djf: #87CEEB;
+            --mam: #00FF7F;
+            --jja: #DAA520;
+            --son: #FA8072;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1360px;
+            margin: 0 auto;
+            padding: 48px 28px;
+        }
+
+        header {
+            margin-bottom: 40px;
+            display: flex;
+            align-items: baseline;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        h1 {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            letter-spacing: -0.03em;
+        }
+
+        .subtitle {
+            color: var(--text-muted);
+            font-size: 0.88rem;
+            font-weight: 400;
+        }
+
+        .season-bar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 32px;
+            flex-wrap: wrap;
+        }
+
+        .season-pill {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 0.82rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .season-pill .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .season-pill .sigla {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.78rem;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+
+        .chart-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            transition: border-color 0.25s ease;
+        }
+
+        .chart-card:hover { border-color: #2d3a4d; }
+        .chart-card.full-width { grid-column: 1 / -1; }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .chart-title {
+            font-size: 0.82rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .chart-letter {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--text-muted);
+            font-size: 0.78rem;
+        }
+
+        .chart-card.full-width .chart-inner {
+            max-width: 680px;
+            margin: 0 auto;
+        }
+
+        svg.boxplot-svg {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .bp-tooltip {
+            position: fixed;
+            pointer-events: none;
+            background: #1a2030;
+            border: 1px solid #2a3548;
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-size: 0.8rem;
+            color: #e8ecf4;
+            z-index: 1000;
+            display: none;
+            white-space: nowrap;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+            line-height: 1.7;
+            font-family: 'DM Sans', sans-serif;
+        }
+
+        .bp-tooltip .tt-title {
+            font-weight: 700;
+            margin-bottom: 4px;
+            font-size: 0.85rem;
+        }
+
+        .bp-tooltip .tt-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 24px;
+        }
+
+        .bp-tooltip .tt-label { color: #7a8599; }
+
+        .bp-tooltip .tt-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.78rem;
+            color: #e8ecf4;
+        }
+
+        @media (max-width: 968px) {
+            .dashboard-grid { grid-template-columns: 1fr; }
+        }
+
+        @media (max-width: 640px) {
+            h1 { font-size: 1.3rem; }
+            header { flex-direction: column; gap: 6px; }
+            .container { padding: 24px 14px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Análise de Precipitação Extrema</h1>
+            <span class="subtitle">Distribuição estatística por período sazonal · 2005–2021</span>
+        </header>
+
+        <div class="season-bar">
+            <div class="season-pill"><span class="dot" style="background:var(--djf)"></span><span class="sigla">DJF</span> Dez–Jan–Fev</div>
+            <div class="season-pill"><span class="dot" style="background:var(--mam)"></span><span class="sigla">MAM</span> Mar–Abr–Mai</div>
+            <div class="season-pill"><span class="dot" style="background:var(--jja)"></span><span class="sigla">JJA</span> Jun–Jul–Ago</div>
+            <div class="season-pill"><span class="dot" style="background:var(--son)"></span><span class="sigla">SON</span> Set–Out–Nov</div>
+        </div>
+
+        <div class="dashboard-grid">
+            <div class="chart-card">
+                <div class="chart-header"><span class="chart-title">Precipitação Horária</span><span class="chart-letter">(a)</span></div>
+                <div id="chart-1h"></div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-header"><span class="chart-title">Acumulado 3 Horas</span><span class="chart-letter">(b)</span></div>
+                <div id="chart-3h"></div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-header"><span class="chart-title">Acumulado 6 Horas</span><span class="chart-letter">(c)</span></div>
+                <div id="chart-6h"></div>
+            </div>
+            <div class="chart-card">
+                <div class="chart-header"><span class="chart-title">Acumulado 12 Horas</span><span class="chart-letter">(d)</span></div>
+                <div id="chart-12h"></div>
+            </div>
+            <div class="chart-card full-width">
+                <div class="chart-inner">
+                    <div class="chart-header"><span class="chart-title">Acumulado 24 Horas</span><span class="chart-letter">(e)</span></div>
+                    <div id="chart-24h"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="bp-tooltip" id="tooltip"></div>
+
+    <script>
+        const colors = { DJF:'#87CEEB', MAM:'#00FF7F', JJA:'#DAA520', SON:'#FA8072' };
+        const seasonNames = { DJF:'Verão', MAM:'Outono', JJA:'Inverno', SON:'Primavera' };
+        const periods = ['DJF','MAM','JJA','SON'];
+
+        // DADOS REAIS — calculados dos mesmos arquivos que o R lê
+        const datasets = {
+            '1h': {
+                DJF: { q1:15.20, median:26.60, q3:27.60, min:3.40, max:39.40, outliers:[53.00, 61.40] },
+                MAM: { q1:29.60, median:33.20, q3:45.20, min:11.60, max:50.80, outliers:[] },
+                JJA: { q1:19.00, median:21.80, q3:25.40, min:9.80, max:27.80, outliers:[35.20] },
+                SON: { q1:6.20, median:9.00, q3:11.00, min:2.70, max:15.40, outliers:[24.40] }
+            },
+            '3h': {
+                DJF: { q1:22.00, median:31.00, q3:46.60, min:5.40, max:66.20, outliers:[120.20] },
+                MAM: { q1:38.60, median:45.20, q3:58.80, min:9.80, max:87.60, outliers:[] },
+                JJA: { q1:30.60, median:38.40, q3:41.20, min:17.80, max:54.60, outliers:[69.00] },
+                SON: { q1:9.80, median:11.60, q3:18.80, min:3.60, max:31.60, outliers:[33.60] }
+            },
+            '6h': {
+                DJF: { q1:25.20, median:31.00, q3:66.90, min:5.40, max:127.60, outliers:[] },
+                MAM: { q1:42.40, median:59.80, q3:76.60, min:11.00, max:119.00, outliers:[] },
+                JJA: { q1:43.00, median:52.60, q3:61.40, min:22.60, max:72.80, outliers:[103.80] },
+                SON: { q1:10.80, median:13.40, q3:24.20, min:5.00, max:36.20, outliers:[] }
+            },
+            '12h': {
+                DJF: { q1:25.40, median:44.00, q3:71.40, min:7.70, max:130.00, outliers:[] },
+                MAM: { q1:53.80, median:77.20, q3:91.60, min:21.70, max:122.20, outliers:[] },
+                JJA: { q1:46.00, median:61.00, q3:88.40, min:23.40, max:122.00, outliers:[] },
+                SON: { q1:11.60, median:19.20, q3:28.60, min:7.80, max:38.20, outliers:[] }
+            },
+            '24h': {
+                DJF: { q1:30.80, median:50.60, q3:82.40, min:15.00, max:130.20, outliers:[] },
+                MAM: { q1:69.20, median:91.60, q3:110.20, min:39.90, max:146.40, outliers:[] },
+                JJA: { q1:67.20, median:103.80, q3:117.40, min:30.60, max:153.20, outliers:[] },
+                SON: { q1:13.60, median:24.40, q3:31.80, min:10.60, max:43.60, outliers:[68.00] }
+            }
+        };
+
+        const tooltip = document.getElementById('tooltip');
+
+        function showTooltip(e, periodo, stats) {
+            const nome = seasonNames[periodo];
+            let html =
+                `<div class="tt-title" style="color:${colors[periodo]}">${nome} (${periodo})</div>` +
+                `<div class="tt-row"><span class="tt-label">Limite superior</span><span class="tt-value">${stats.max.toFixed(2)} mm</span></div>` +
+                `<div class="tt-row"><span class="tt-label">3º quartil (Q3)</span><span class="tt-value">${stats.q3.toFixed(2)} mm</span></div>` +
+                `<div class="tt-row"><span class="tt-label">Mediana (Q2)</span><span class="tt-value">${stats.median.toFixed(2)} mm</span></div>` +
+                `<div class="tt-row"><span class="tt-label">1º quartil (Q1)</span><span class="tt-value">${stats.q1.toFixed(2)} mm</span></div>` +
+                `<div class="tt-row"><span class="tt-label">Limite inferior</span><span class="tt-value">${stats.min.toFixed(2)} mm</span></div>`;
+            if (stats.outliers.length > 0)
+                html += `<div class="tt-row"><span class="tt-label">Discrepantes</span><span class="tt-value">${stats.outliers.map(o=>o.toFixed(2)).join(', ')} mm</span></div>`;
+            tooltip.innerHTML = html;
+            tooltip.style.display = 'block';
+            posTooltip(e);
+        }
+
+        function posTooltip(e) {
+            let x = e.clientX + 14, y = e.clientY - 10;
+            tooltip.style.left = x + 'px';
+            tooltip.style.top = y + 'px';
+            requestAnimationFrame(() => {
+                const r = tooltip.getBoundingClientRect();
+                if (x + r.width + 10 > window.innerWidth) tooltip.style.left = (e.clientX - r.width - 14) + 'px';
+                if (y + r.height + 10 > window.innerHeight) tooltip.style.top = (e.clientY - r.height - 10) + 'px';
+            });
+        }
+
+        function hideTooltip() { tooltip.style.display = 'none'; }
+
+        function niceStep(range, targetTicks) {
+            const rough = range / targetTicks;
+            const mag = Math.pow(10, Math.floor(Math.log10(rough)));
+            const res = rough / mag;
+            let nice;
+            if (res <= 1.5) nice = 1;
+            else if (res <= 3) nice = 2;
+            else if (res <= 7) nice = 5;
+            else nice = 10;
+            return nice * mag;
+        }
+
+        function buildChart(containerId, dataKey, yLabel) {
+            const data = datasets[dataKey];
+            let gMin = Infinity, gMax = -Infinity;
+            periods.forEach(p => {
+                const s = data[p];
+                gMin = Math.min(gMin, s.min, ...s.outliers);
+                gMax = Math.max(gMax, s.max, ...s.outliers);
+            });
+            const range = gMax - gMin;
+            const padBot = gMin - range * 0.1;
+            const padTop = gMax + range * 0.1;
+            const dRange = padTop - padBot;
+
+            const W = 520, H = 350;
+            const mL = 62, mR = 16, mT = 10, mB = 48;
+            const pW = W - mL - mR, pH = H - mT - mB;
+
+            const yToSVG = v => mT + pH - ((v - padBot) / dRange) * pH;
+
+            let svg = '';
+
+            const step = niceStep(dRange, 6);
+            const start = Math.ceil(padBot / step) * step;
+            for (let v = start; v <= padTop + step * 0.01; v += step) {
+                const y = yToSVG(v);
+                if (y < mT - 2 || y > mT + pH + 2) continue;
+                svg += `<line x1="${mL}" y1="${y}" x2="${W-mR}" y2="${y}" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>`;
+                svg += `<text x="${mL-8}" y="${y+4}" text-anchor="end" fill="#4a5568" font-size="11" font-family="JetBrains Mono,monospace">${Math.round(v)}</text>`;
+            }
+
+            const ylX = 14, ylY = mT + pH / 2;
+            svg += `<text x="${ylX}" y="${ylY}" text-anchor="middle" fill="#4a5568" font-size="11.5" font-family="DM Sans,sans-serif" transform="rotate(-90,${ylX},${ylY})">${yLabel}</text>`;
+            svg += `<line x1="${mL}" y1="${mT+pH}" x2="${W-mR}" y2="${mT+pH}" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>`;
+
+            const spacing = pW / 4;
+            const boxW = 46;
+
+            periods.forEach((p, i) => {
+                const s = data[p];
+                const cx = mL + spacing * i + spacing / 2;
+                const col = colors[p];
+                const fill = col + '25';
+                const hb = boxW / 2;
+
+                const yMin = yToSVG(s.min), yQ1 = yToSVG(s.q1), yMed = yToSVG(s.median), yQ3 = yToSVG(s.q3), yMax = yToSVG(s.max);
+
+                svg += `<line x1="${cx}" y1="${yMax}" x2="${cx}" y2="${yQ3}" stroke="${col}" stroke-width="1.5" opacity="0.7"/>`;
+                svg += `<line x1="${cx}" y1="${yQ1}" x2="${cx}" y2="${yMin}" stroke="${col}" stroke-width="1.5" opacity="0.7"/>`;
+                svg += `<line x1="${cx-hb*0.5}" y1="${yMax}" x2="${cx+hb*0.5}" y2="${yMax}" stroke="${col}" stroke-width="1.5" opacity="0.7"/>`;
+                svg += `<line x1="${cx-hb*0.5}" y1="${yMin}" x2="${cx+hb*0.5}" y2="${yMin}" stroke="${col}" stroke-width="1.5" opacity="0.7"/>`;
+                svg += `<rect x="${cx-hb}" y="${yQ3}" width="${boxW}" height="${yQ1-yQ3}" fill="${fill}" stroke="${col}" stroke-width="1.8" rx="2"/>`;
+                svg += `<line x1="${cx-hb}" y1="${yMed}" x2="${cx+hb}" y2="${yMed}" stroke="${col}" stroke-width="2.5" stroke-linecap="round"/>`;
+
+                s.outliers.forEach(o => {
+                    svg += `<circle cx="${cx}" cy="${yToSVG(o)}" r="3.5" fill="none" stroke="${col}" stroke-width="1.5" opacity="0.8"/>`;
+                });
+
+                let allY = [yMax, yMin, ...s.outliers.map(yToSVG)];
+                const hTop = Math.min(...allY) - 6, hBot = Math.max(...allY) + 6;
+                svg += `<rect x="${cx-hb-8}" y="${hTop}" width="${boxW+16}" height="${hBot-hTop}" fill="transparent" class="bph" data-p="${p}" data-k="${dataKey}" style="cursor:pointer"/>`;
+
+                svg += `<text x="${cx}" y="${mT+pH+18}" text-anchor="middle" fill="#7a8599" font-size="11.5" font-family="JetBrains Mono,monospace" font-weight="500">${p}</text>`;
+                svg += `<text x="${cx}" y="${mT+pH+34}" text-anchor="middle" fill="#4a5568" font-size="10.5" font-family="DM Sans,sans-serif">(${seasonNames[p]})</text>`;
+            });
+
+            const el = document.getElementById(containerId);
+            const svgEl = document.createElementNS('http://www.w3.org/2000/svg','svg');
+            svgEl.setAttribute('viewBox', `0 0 ${W} ${H}`);
+            svgEl.setAttribute('class','boxplot-svg');
+            svgEl.innerHTML = svg;
+
+            svgEl.querySelectorAll('.bph').forEach(r => {
+                r.addEventListener('mouseenter', e => showTooltip(e, r.dataset.p, datasets[r.dataset.k][r.dataset.p]));
+                r.addEventListener('mousemove', posTooltip);
+                r.addEventListener('mouseleave', hideTooltip);
+            });
+
+            el.appendChild(svgEl);
+        }
+
+        buildChart('chart-1h','1h','Precipitação (mm/1h)');
+        buildChart('chart-3h','3h','Precipitação (mm/3h)');
+        buildChart('chart-6h','6h','Precipitação (mm/6h)');
+        buildChart('chart-12h','12h','Precipitação (mm/12h)');
+        buildChart('chart-24h','24h','Precipitação (mm/24h)');
+    </script>
+</body>
+</html>

@@ -1,0 +1,1123 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Acadêmico - Meteorologia</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #1a73e8;
+            --primary-dark: #1557b0;
+            --primary-light: #e8f0fe;
+            --secondary: #5f6368;
+            --background: #f8f9fa;
+            --surface: #ffffff;
+            --error: #d93025;
+            --success: #188038;
+            --on-primary: #ffffff;
+            --on-surface: #202124;
+            --on-surface-variant: #5f6368;
+            --outline: #dadce0;
+            --outline-variant: #f1f3f4;
+            --shadow-1: 0 1px 2px 0 rgba(60,64,67,0.3), 0 1px 3px 1px rgba(60,64,67,0.15);
+            --shadow-2: 0 1px 3px 0 rgba(60,64,67,0.3), 0 4px 8px 3px rgba(60,64,67,0.15);
+            --shadow-3: 0 4px 8px 3px rgba(60,64,67,0.15), 0 1px 3px rgba(60,64,67,0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: var(--background);
+            color: var(--on-surface);
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* ========== SIDEBAR ========== */
+        .sidebar {
+            width: 360px;
+            background: var(--surface);
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid var(--outline-variant);
+            box-shadow: var(--shadow-1);
+            z-index: 10;
+        }
+
+        .sidebar-header {
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--outline-variant);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--surface);
+        }
+
+        .sidebar-header h1 {
+            font-size: 22px;
+            font-weight: 400;
+            color: var(--on-surface);
+            letter-spacing: -0.5px;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .icon-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--secondary);
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .icon-btn:hover {
+            background: var(--outline-variant);
+            color: var(--on-surface);
+        }
+
+        .icon-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* Selection Bar */
+        .selection-bar {
+            background: var(--primary);
+            color: var(--on-primary);
+            padding: 12px 24px;
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            animation: slideDown 0.2s ease;
+        }
+
+        .selection-bar.show {
+            display: flex;
+        }
+
+        .selection-info {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .selection-count {
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .selection-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-text {
+            background: transparent;
+            border: none;
+            color: var(--on-primary);
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: background 0.2s;
+        }
+
+        .btn-text:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        /* Add Button */
+        .add-section {
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--outline-variant);
+        }
+
+        .btn-fab {
+            width: 100%;
+            height: 48px;
+            background: var(--primary);
+            color: var(--on-primary);
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            font-size: 14px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            box-shadow: var(--shadow-1);
+            transition: all 0.2s;
+        }
+
+        .btn-fab:hover {
+            background: var(--primary-dark);
+            box-shadow: var(--shadow-2);
+            transform: translateY(-1px);
+        }
+
+        .btn-fab:active {
+            transform: translateY(0);
+            box-shadow: var(--shadow-1);
+        }
+
+        /* Topics List */
+        .topics-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px 16px;
+        }
+
+        .topics-label {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--on-surface-variant);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 16px 8px 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .topic-count {
+            background: var(--outline-variant);
+            color: var(--on-surface-variant);
+            padding: 2px 8px;
+            border-radius: 8px;
+            font-size: 11px;
+        }
+
+        .topic-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .topic-item {
+            background: var(--surface);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            border: 2px solid transparent;
+        }
+
+        .topic-item:hover {
+            background: var(--outline-variant);
+            box-shadow: var(--shadow-1);
+        }
+
+        .topic-item.selected {
+            background: var(--primary-light);
+            border-color: var(--primary);
+        }
+
+        .topic-item.active {
+            background: var(--primary-light);
+        }
+
+        .checkbox {
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--outline);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .topic-item.selected .checkbox {
+            background: var(--primary);
+            border-color: var(--primary);
+        }
+
+        .checkbox .material-icons {
+            font-size: 16px;
+            color: white;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+
+        .topic-item.selected .checkbox .material-icons {
+            opacity: 1;
+        }
+
+        .topic-content {
+            flex: 1;
+            min-width: 0;
+            cursor: pointer;
+        }
+
+        .topic-title {
+            font-size: 14px;
+            font-weight: 400;
+            color: var(--on-surface);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .topic-item.selected .topic-title {
+            color: var(--primary-dark);
+            font-weight: 500;
+        }
+
+        .topic-meta {
+            font-size: 12px;
+            color: var(--on-surface-variant);
+            margin-top: 2px;
+        }
+
+        .menu-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--secondary);
+            opacity: 0;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+
+        .topic-item:hover .menu-btn {
+            opacity: 1;
+        }
+
+        .menu-btn:hover {
+            background: rgba(95, 99, 104, 0.1);
+        }
+
+        /* Dropdown Menu */
+        .dropdown-menu {
+            position: absolute;
+            right: 8px;
+            top: 100%;
+            margin-top: 4px;
+            background: var(--surface);
+            border-radius: 8px;
+            box-shadow: var(--shadow-3);
+            min-width: 200px;
+            z-index: 1000;
+            overflow: hidden;
+            animation: menuOpen 0.2s ease;
+            border: 1px solid var(--outline-variant);
+        }
+
+        @keyframes menuOpen {
+            from {
+                opacity: 0;
+                transform: scale(0.95) translateY(-8px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        .menu-item {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 12px 16px;
+            cursor: pointer;
+            transition: background 0.1s;
+            font-size: 14px;
+            color: var(--on-surface);
+        }
+
+        .menu-item:hover {
+            background: var(--outline-variant);
+        }
+
+        .menu-item.danger {
+            color: var(--error);
+        }
+
+        .menu-item .material-icons {
+            font-size: 20px;
+            color: var(--secondary);
+        }
+
+        .menu-item.danger .material-icons {
+            color: var(--error);
+        }
+
+        .menu-divider {
+            height: 1px;
+            background: var(--outline-variant);
+            margin: 4px 0;
+        }
+
+        /* Add Form */
+        .add-form-container {
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--outline-variant);
+            display: none;
+            animation: slideDown 0.2s ease;
+        }
+
+        .add-form-container.show {
+            display: block;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-8px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .form-title {
+            font-size: 16px;
+            font-weight: 500;
+            margin-bottom: 16px;
+            color: var(--on-surface);
+        }
+
+        .input-field {
+            width: 100%;
+            margin-bottom: 16px;
+        }
+
+        .input-field label {
+            display: block;
+            font-size: 12px;
+            color: var(--on-surface-variant);
+            margin-bottom: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .input-field input,
+        .input-field textarea {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid var(--outline);
+            border-radius: 8px;
+            font-family: 'Roboto', sans-serif;
+            font-size: 14px;
+            transition: all 0.2s;
+            resize: vertical;
+        }
+
+        .input-field input:focus,
+        .input-field textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px var(--primary-light);
+        }
+
+        .input-field textarea {
+            min-height: 100px;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+        }
+
+        .btn-outlined {
+            padding: 10px 24px;
+            border: 1px solid var(--outline);
+            background: transparent;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: all 0.2s;
+        }
+
+        .btn-outlined:hover {
+            background: var(--outline-variant);
+        }
+
+        .btn-filled {
+            padding: 10px 24px;
+            border: none;
+            background: var(--primary);
+            color: var(--on-primary);
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            box-shadow: var(--shadow-1);
+            transition: all 0.2s;
+        }
+
+        .btn-filled:hover {
+            background: var(--primary-dark);
+            box-shadow: var(--shadow-2);
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 32px;
+            background: var(--background);
+        }
+
+        .content-card {
+            background: var(--surface);
+            border-radius: 12px;
+            box-shadow: var(--shadow-1);
+            padding: 40px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .content-card h1 {
+            font-size: 28px;
+            font-weight: 400;
+            color: var(--on-surface);
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid var(--primary);
+            letter-spacing: -0.5px;
+        }
+
+        .content-card p {
+            color: var(--on-surface-variant);
+            line-height: 1.7;
+            margin-bottom: 16px;
+            font-size: 15px;
+        }
+
+        .info-box {
+            background: #e6f4ea;
+            border-left: 4px solid var(--success);
+            padding: 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 24px 0;
+        }
+
+        .info-box strong {
+            color: var(--success);
+            font-weight: 500;
+        }
+
+        .metric-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 16px;
+            margin: 24px 0;
+        }
+
+        .metric-card {
+            background: var(--outline-variant);
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            border: 1px solid var(--outline);
+        }
+
+        .metric-value {
+            font-size: 32px;
+            font-weight: 400;
+            color: var(--primary);
+            display: block;
+            letter-spacing: -1px;
+        }
+
+        .metric-label {
+            color: var(--on-surface-variant);
+            font-size: 13px;
+            margin-top: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .tag {
+            display: inline-block;
+            background: #e6f4ea;
+            color: var(--success);
+            padding: 6px 16px;
+            border-radius: 16px;
+            font-size: 13px;
+            font-weight: 500;
+            margin: 8px 0;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 80px 40px;
+            color: var(--on-surface-variant);
+        }
+
+        .empty-state .material-icons {
+            font-size: 96px;
+            color: var(--outline);
+            margin-bottom: 24px;
+        }
+
+        .empty-state h2 {
+            font-size: 22px;
+            font-weight: 400;
+            color: var(--on-surface);
+            margin-bottom: 8px;
+        }
+
+        .empty-state p {
+            font-size: 15px;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--outline);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--secondary);
+        }
+
+        /* Overlay */
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.3);
+            z-index: 999;
+            display: none;
+        }
+
+        .overlay.show {
+            display: block;
+        }
+
+        /* Toast Notification */
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: #323232;
+            color: white;
+            padding: 14px 24px;
+            border-radius: 8px;
+            box-shadow: var(--shadow-3);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            z-index: 10000;
+            opacity: 0;
+            transition: all 0.3s;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        .toast-action {
+            color: #8ab4f8;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+    </style>
+</head>
+<body>
+
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <h1>Tópicos</h1>
+            <div class="header-actions">
+                <button class="icon-btn" onclick="toggleSelectAll()" title="Selecionar todos">
+                    <span class="material-icons">select_all</span>
+                </button>
+                <button class="icon-btn" onclick="sortAlphabetically()" title="Ordenar A-Z">
+                    <span class="material-icons">sort_by_alpha</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="selection-bar" id="selectionBar">
+            <div class="selection-info">
+                <span class="selection-count" id="selectionCount">0 selecionados</span>
+            </div>
+            <div class="selection-actions">
+                <button class="btn-text" onclick="editSelected()">Editar</button>
+                <button class="btn-text" onclick="deleteSelected()">Excluir</button>
+                <button class="btn-text" onclick="clearSelection()">Cancelar</button>
+            </div>
+        </div>
+
+        <div class="add-section">
+            <button class="btn-fab" onclick="toggleForm()">
+                <span class="material-icons">add</span>
+                Novo Tópico
+            </button>
+        </div>
+
+        <div class="add-form-container" id="addForm">
+            <div class="form-title">Criar Novo Tópico</div>
+            <div class="input-field">
+                <label>Título</label>
+                <input type="text" id="inputTitulo" placeholder="Digite o título">
+            </div>
+            <div class="input-field">
+                <label>Conteúdo</label>
+                <textarea id="inputResposta" placeholder="Digite o conteúdo"></textarea>
+            </div>
+            <div class="form-actions">
+                <button class="btn-outlined" onclick="toggleForm()">Cancelar</button>
+                <button class="btn-filled" onclick="addTopico()">Salvar</button>
+            </div>
+        </div>
+
+        <div class="topics-container">
+            <div class="topics-label">
+                Índice
+                <span class="topic-count" id="topicCount">0</span>
+            </div>
+            <ul class="topic-list" id="topicList"></ul>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <div id="contentCard" class="content-card">
+            <div class="empty-state">
+                <span class="material-icons">inbox</span>
+                <h2>Nenhum tópico selecionado</h2>
+                <p>Selecione um tópico na barra lateral para visualizar o conteúdo</p>
+            </div>
+        </div>
+    </main>
+
+    <div class="overlay" id="overlay" onclick="closeAllMenus()"></div>
+
+    <div class="toast" id="toast">
+        <span id="toastMessage">Operação realizada</span>
+        <button class="toast-action" onclick="hideToast()">OK</button>
+    </div>
+
+    <script>
+        const padrao = [
+            {
+                id: 'curva_roc',
+                titulo: 'Curva ROC e Validação',
+                conteudo: `<h1>Curva ROC</h1>
+                <div class="info-box"><strong>Validação:</strong> Verificação da eficácia no preenchimento de falhas de dados.</div>
+                <div class="metric-grid">
+                    <div class="metric-card"><span class="metric-value">0.96</span><span class="metric-label">AUC</span></div>
+                    <div class="metric-card"><span class="metric-value">0.90</span><span class="metric-label">Sensibilidade</span></div>
+                </div>
+                <p><span class="tag">Modelo Excelente</span></p>
+                <p>Consistência estatística garantida para séries temporais de precipitação.</p>`,
+                data: new Date().toLocaleDateString('pt-BR')
+            },
+            {
+                id: 'objetivo_geral',
+                titulo: 'Objetivo Geral',
+                conteudo: `<h1>Objetivo Geral</h1>
+                <p>Integrar a caracterização estatística com a análise físico-processual dos extremos de precipitação na Região Metropolitana do Recife.</p>`,
+                data: new Date().toLocaleDateString('pt-BR')
+            },
+            {
+                id: 'refletividade',
+                titulo: 'Refletividade e chuva',
+                conteudo: `<h1>Refletividade e Chuva</h1>
+                <p>Análise da relação entre refletividade do radar e intensidade de precipitação.</p>`,
+                data: new Date().toLocaleDateString('pt-BR'),
+                custom: true
+            },
+            {
+                id: 'saturacao',
+                titulo: 'Saturação do solo',
+                conteudo: `<h1>Saturação do Solo</h1>
+                <p>Estudo dos níveis de saturação do solo e sua influência nas previsões meteorológicas.</p>`,
+                data: new Date().toLocaleDateString('pt-BR'),
+                custom: true
+            }
+        ];
+
+        let topicos = JSON.parse(localStorage.getItem('dashboardTopicos')) || [...padrao];
+        let ativo = null;
+        let selecionados = new Set();
+        let menuAberto = null;
+
+        function salvar() { 
+            localStorage.setItem('dashboardTopicos', JSON.stringify(topicos)); 
+        }
+
+        function ordenarTopicos() { 
+            return topicos.sort((a, b) => a.titulo.localeCompare(b.titulo, 'pt-BR')); 
+        }
+
+        function toggleForm() {
+            const form = document.getElementById('addForm');
+            form.classList.toggle('show');
+            if (form.classList.contains('show')) {
+                document.getElementById('inputTitulo').focus();
+            }
+        }
+
+        function renderLista() {
+            const lista = document.getElementById('topicList');
+            lista.innerHTML = '';
+            
+            ordenarTopicos().forEach(t => {
+                const li = document.createElement('li');
+                li.className = `topic-item ${ativo === t.id ? 'active' : ''} ${selecionados.has(t.id) ? 'selected' : ''}`;
+                
+                const ehPadrao = padrao.some(p => p.id === t.id);
+                
+                li.innerHTML = `
+                    <div class="checkbox" onclick="toggleSelection('${t.id}', event)">
+                        <span class="material-icons">check</span>
+                    </div>
+                    <div class="topic-content" onclick="selecionar('${t.id}')">
+                        <div class="topic-title">${t.titulo}</div>
+                        <div class="topic-meta">${t.data || 'Hoje'}</div>
+                    </div>
+                    <button class="menu-btn" onclick="toggleMenu('${t.id}', event)">
+                        <span class="material-icons">more_vert</span>
+                    </button>
+                    <div class="dropdown-menu" id="menu-${t.id}" style="display: none;">
+                        <div class="menu-item" onclick="editTopico('${t.id}')">
+                            <span class="material-icons">edit</span>
+                            Editar
+                        </div>
+                        <div class="menu-item" onclick="duplicateTopico('${t.id}')">
+                            <span class="material-icons">content_copy</span>
+                            Duplicar
+                        </div>
+                        ${!ehPadrao ? `
+                        <div class="menu-divider"></div>
+                        <div class="menu-item danger" onclick="deleteTopico('${t.id}')">
+                            <span class="material-icons">delete</span>
+                            Excluir
+                        </div>
+                        ` : ''}
+                    </div>
+                `;
+                
+                lista.appendChild(li);
+            });
+            
+            document.getElementById('topicCount').textContent = topicos.length;
+            updateSelectionBar();
+        }
+
+        function toggleSelection(id, event) {
+            event.stopPropagation();
+            if (selecionados.has(id)) {
+                selecionados.delete(id);
+            } else {
+                selecionados.add(id);
+            }
+            renderLista();
+        }
+
+        function toggleSelectAll() {
+            if (selecionados.size === topicos.length) {
+                selecionados.clear();
+            } else {
+                topicos.forEach(t => selecionados.add(t.id));
+            }
+            renderLista();
+        }
+
+        function updateSelectionBar() {
+            const bar = document.getElementById('selectionBar');
+            const count = document.getElementById('selectionCount');
+            
+            if (selecionados.size > 0) {
+                bar.classList.add('show');
+                count.textContent = `${selecionados.size} selecionado${selecionados.size > 1 ? 's' : ''}`;
+            } else {
+                bar.classList.remove('show');
+            }
+        }
+
+        function clearSelection() {
+            selecionados.clear();
+            renderLista();
+        }
+
+        function editSelected() {
+            if (selecionados.size === 1) {
+                const id = Array.from(selecionados)[0];
+                editTopico(id);
+            } else if (selecionados.size > 1) {
+                showToast('Selecione apenas um tópico para editar');
+            }
+        }
+
+        function deleteSelected() {
+            if (selecionados.size === 0) return;
+            
+            const count = selecionados.size;
+            const idsParaDeletar = Array.from(selecionados);
+            
+            if (confirm(`Deseja realmente excluir ${count} tópico${count > 1 ? 's' : ''}?`)) {
+                topicos = topicos.filter(t => {
+                    const ehPadrao = padrao.some(p => p.id === t.id);
+                    return ehPadrao || !selecionados.has(t.id);
+                });
+                
+                if (ativo && selecionados.has(ativo)) {
+                    ativo = null;
+                    document.getElementById('contentCard').innerHTML = `
+                        <div class="empty-state">
+                            <span class="material-icons">inbox</span>
+                            <h2>Nenhum tópico selecionado</h2>
+                            <p>Selecione um tópico na barra lateral para visualizar o conteúdo</p>
+                        </div>
+                    `;
+                }
+                
+                selecionados.clear();
+                salvar();
+                renderLista();
+                showToast(`${count} tópico${count > 1 ? 's' : ''} excluído${count > 1 ? 's' : ''}`);
+            }
+        }
+
+        function toggleMenu(id, event) {
+            event.stopPropagation();
+            
+            if (menuAberto && menuAberto !== id) {
+                document.getElementById(`menu-${menuAberto}`).style.display = 'none';
+            }
+            
+            const menu = document.getElementById(`menu-${id}`);
+            if (menu.style.display === 'none') {
+                menu.style.display = 'block';
+                menuAberto = id;
+                document.getElementById('overlay').classList.add('show');
+            } else {
+                menu.style.display = 'none';
+                menuAberto = null;
+                document.getElementById('overlay').classList.remove('show');
+            }
+        }
+
+        function closeAllMenus() {
+            if (menuAberto) {
+                document.getElementById(`menu-${menuAberto}`).style.display = 'none';
+                menuAberto = null;
+            }
+            document.getElementById('overlay').classList.remove('show');
+        }
+
+        function selecionar(id) {
+            closeAllMenus();
+            ativo = id;
+            renderLista();
+            const t = topicos.find(x => x.id === id);
+            if (t) {
+                document.getElementById('contentCard').innerHTML = t.conteudo;
+            }
+        }
+
+        function addTopico() {
+            const titulo = document.getElementById('inputTitulo').value.trim();
+            const resposta = document.getElementById('inputResposta').value.trim();
+            
+            if (!titulo || !resposta) {
+                showToast('Preencha todos os campos');
+                return;
+            }
+            
+            const novo = {
+                id: 'custom_' + Date.now(),
+                titulo,
+                conteudo: `<h1>${titulo}</h1><p>${resposta.replace(/\n/g, '<br>')}</p>`,
+                data: new Date().toLocaleDateString('pt-BR'),
+                custom: true
+            };
+            
+            topicos.push(novo);
+            salvar();
+            renderLista();
+            selecionar(novo.id);
+            toggleForm();
+            
+            document.getElementById('inputTitulo').value = '';
+            document.getElementById('inputResposta').value = '';
+            
+            showToast('Tópico criado com sucesso');
+        }
+
+        function editTopico(id) {
+            closeAllMenus();
+            const t = topicos.find(x => x.id === id);
+            if (!t || padrao.some(p => p.id === id)) {
+                showToast('Este tópico não pode ser editado');
+                return;
+            }
+            
+            const novoTitulo = prompt('Novo título:', t.titulo);
+            if (!novoTitulo || !novoTitulo.trim()) return;
+            
+            const novoConteudo = prompt('Novo conteúdo:', t.conteudo.replace(/<[^>]*>/g, ''));
+            if (!novoConteudo) return;
+            
+            t.titulo = novoTitulo.trim();
+            t.conteudo = `<h1>${novoTitulo.trim()}</h1><p>${novoConteudo.replace(/\n/g, '<br>')}</p>`;
+            t.data = new Date().toLocaleDateString('pt-BR');
+            
+            salvar();
+            renderLista();
+            
+            if (ativo === id) {
+                document.getElementById('contentCard').innerHTML = t.conteudo;
+            }
+            
+            showToast('Tópico atualizado');
+        }
+
+        function duplicateTopico(id) {
+            closeAllMenus();
+            const t = topicos.find(x => x.id === id);
+            if (!t) return;
+            
+            const duplicado = {
+                ...t,
+                id: 'custom_' + Date.now(),
+                titulo: t.titulo + ' (cópia)',
+                data: new Date().toLocaleDateString('pt-BR'),
+                custom: true
+            };
+            
+            topicos.push(duplicado);
+            salvar();
+            renderLista();
+            showToast('Tópico duplicado');
+        }
+
+        function deleteTopico(id) {
+            closeAllMenus();
+            const t = topicos.find(x => x.id === id);
+            if (!t || padrao.some(p => p.id === id)) {
+                showToast('Este tópico não pode ser excluído');
+                return;
+            }
+            
+            if (confirm(`Deseja realmente excluir "${t.titulo}"?`)) {
+                topicos = topicos.filter(t => t.id !== id);
+                
+                if (ativo === id) {
+                    ativo = null;
+                    document.getElementById('contentCard').innerHTML = `
+                        <div class="empty-state">
+                            <span class="material-icons">inbox</span>
+                            <h2>Nenhum tópico selecionado</h2>
+                            <p>Selecione um tópico na barra lateral para visualizar o conteúdo</p>
+                        </div>
+                    `;
+                }
+                
+                salvar();
+                renderLista();
+                showToast('Tópico excluído');
+            }
+        }
+
+        function sortAlphabetically() {
+            topicos.sort((a, b) => a.titulo.localeCompare(b.titulo, 'pt-BR'));
+            salvar();
+            renderLista();
+            showToast('Ordenado alfabeticamente');
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMessage').textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => hideToast(), 3000);
+        }
+
+        function hideToast() {
+            document.getElementById('toast').classList.remove('show');
+        }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeAllMenus();
+                clearSelection();
+            }
+            if (e.ctrlKey || e.metaKey) {
+                if (e.key === 'n') {
+                    e.preventDefault();
+                    toggleForm();
+                }
+            }
+        });
+
+        // Enter no título vai para o conteúdo
+        document.getElementById('inputTitulo')?.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                document.getElementById('inputResposta').focus();
+            }
+        });
+
+        // Inicialização
+        renderLista();
+    </script>
+</body>
+</html>
